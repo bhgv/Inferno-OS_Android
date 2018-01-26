@@ -76,10 +76,6 @@ set_target_properties(libtk PROPERTIES IMPORTED_LOCATION
     ${infrlib_DIR}/libtk.a)
 
 
-#SET(WEBP_ENABLE_SWAP_16BIT_CSP ON CACHE BOOL
-#    "Enable byte swap for 16 bit colorspaces." FORCE)
-#add_subdirectory(${WEBP_SRC_DIR} ${WEBP_SRC_DIR}/build/)
-
 # build native_app_glue as a static lib
 include_directories(${ANDROID_NDK}/sources/android/native_app_glue)
 
@@ -99,11 +95,6 @@ add_library(inferno_os_app SHARED
     inferno_os_app.cpp)
 
 
-#target_include_directories(inferno_os_app PRIVATE
-#    )
-#    ${WEBP_SRC_DIR}/examples
-#    ${WEBP_SRC_DIR}/src)
-
 # add lib dependencies
 target_link_libraries(inferno_os_app android log m native_app_glue m
     emu
@@ -116,7 +107,6 @@ target_link_libraries(inferno_os_app android log m native_app_glue m
     libmemlayer
     libmemdraw
     libsec
-    libstyx
     libtk
     libfreetype
     libmp
@@ -125,4 +115,5 @@ target_link_libraries(inferno_os_app android log m native_app_glue m
     )
 #    -Wl,--start-group
 #     -Wl,--end-group
+#    libstyx
 #   libprefab

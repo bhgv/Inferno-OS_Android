@@ -115,7 +115,6 @@
       <excludeFolder url="file://$MODULE_DIR$/../../../app/build/intermediates/tmp" />
       <excludeFolder url="file://$MODULE_DIR$/../../../app/build/intermediates/transforms" />
       <excludeFolder url="file://$MODULE_DIR$/../../../app/build/outputs" />
-      <excludeFolder url="file://$MODULE_DIR$/../../../app/build/reports" />
       <excludeFolder url="file://$MODULE_DIR$/../../../app/build/tmp" />
     </content>
     <content url="file://D:/Android/sdk/ndk-bundle/sources/android/native_app_glue">

@@ -16,9 +16,9 @@ CFLAGS=		-O\
 		-fPIE -fPIC -std=c99\
 		-Wuninitialized -Wunused-variable -Wreturn-type -Wimplicit\
 		-Wattributes\
-		-IC:/Users/x200t/AndroidStudioProjects/webp/inferno-os/ndk_toolchain/sysroot/usr/include\
-		-IC:/Users/x200t/AndroidStudioProjects/webp/inferno-os/ndk_toolchain/sysroot/usr/include/arm-linux-androideabi\
-		-IC:/Users/x200t/AndroidStudioProjects/webp/inferno-os/ndk_toolchain/lib/gcc/arm-linux-androideabi/4.9.x/include\
+		-I$ROOT/ndk_toolchain/sysroot/usr/include\
+		-I$ROOT/ndk_toolchain/sysroot/usr/include/arm-linux-androideabi\
+		-I$ROOT/ndk_toolchain/lib/gcc/arm-linux-androideabi/4.9.x/include\
 		-I$ROOT/Android/arm/include\
 		-I$ROOT/include\
 		-DLINUX_ARM\
@@ -27,14 +27,14 @@ CFLAGS=		-O\
 		-ffunction-sections -funwind-tables -fstack-protector-strong\
 		-no-canonical-prefixes -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16\
 		-marm -Wa,--noexecstack -Wformat -Werror=format-security  -std=c99\
-		--sysroot=C:/Users/x200t/AndroidStudioProjects/webp/inferno-os/ndk_toolchain/sysroot 
+		--sysroot=$ROOT/ndk_toolchain/sysroot 
 
 #-static
 
 
 ANSICPP=
 LD=		arm-linux-androideabi-gcc 
-LDFLAGS=	-LD:\Android\sdk\ndk-bundle\platforms\android-17\arch-arm\usr\lib -llog
+LDFLAGS=	-L$ROOT/ndk_toolchain/sysroot/usr/lib -llog
 
 SYSLIBS=
 
