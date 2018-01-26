@@ -5,7 +5,6 @@
 
 #	On Nt systems, the ROOT path MUST be of the form `drive:/path'
 ROOT=$PWD
-#C:/Users/x200t/AndroidStudioProjects/webp/inferno-os
 
 #
 #	Specify the flavour of Tk (std for standard builds)

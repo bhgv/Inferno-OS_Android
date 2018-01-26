@@ -15,6 +15,7 @@ DIRS=\
 	spree\
 	svc\
 	tiny\
-	wm\
+#	wm\
+	awm\
 
 <$ROOT/mkfiles/mksubdirs

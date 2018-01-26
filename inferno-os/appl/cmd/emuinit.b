@@ -43,13 +43,14 @@ loadmod(args: list of string): (Command, list of string)
 
 	# try loading the module directly.
 	mod: Command;
-	if (path != nil && path[0] == '/')
-		mod = load Command "/dis/"+path;
-	else {
-		mod = load Command "/dis/"+path;
-		if (mod == nil)
-			mod = load Command "/"+path;
-	}
+#	if (path != nil && path[0] == '/')
+#		mod = load Command path;
+#	else {
+#		mod = load Command "/dis/"+path;
+#		if (mod == nil)
+#			mod = load Command "/"+path;
+#	}
+	mod = load Command "/dis/wm/awm.dis";
 	if(mod != nil)
 		return (mod, args);
 
