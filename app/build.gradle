@@ -1,0 +1,36 @@
+apply plugin: 'com.android.application'
+android {
+    compileSdkVersion 25
+
+    defaultConfig {
+        applicationId 'bhgv.vitanuova.inferno_os'
+        minSdkVersion 14
+        targetSdkVersion 17
+        ndk.abiFilters 'armeabi-v7a'
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_ARM_MODE=arm',
+                        '-DANDROID_TOOLCHAIN=gcc',
+                        '-DANDROID_STL=c++_static'
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path 'src/main/cpp/CMakeLists.txt'
+        }
+    }
+    productFlavors {
+    }
+}
+
+dependencies {
+}
