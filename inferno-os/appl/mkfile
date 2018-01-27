@@ -9,7 +9,8 @@ DIRS=\
 	demo\
 	ebook\
 	grid\
-	lib\
+#	lib\
+	alib\
 	math\
 #	mux\
 	spree\
