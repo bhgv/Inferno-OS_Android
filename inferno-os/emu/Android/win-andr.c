@@ -316,11 +316,12 @@ LOGE("attachscreen");
 
 	if(!triedscreen){
 		triedscreen = 1;
-		kproc("xproc", xproc, NULL/*xmcon*/, 0);
+		//if(gscreendata != xscreendata)
+		//	kproc("xproc", xproc, NULL/*xmcon*/, 0);
 //		kproc("xkbdproc", xkbdproc, NULL/*xkbdcon*/, 0/*KPX11*/);	/* silly stack size for bloated X11 */
 
 //#undef malloc
-		gscreendata = malloc(Xsize * Ysize * (displaydepth >> 3));
+		gscreendata = xscreendata; //malloc(Xsize * Ysize * (displaydepth >> 3));
 LOGE("attachscreen: gscreendata=%x, (displaydepth>>3)=%d", gscreendata, (displaydepth>>3));
 //#define malloc malloc_
 //		xscreendata = malloc(Xsize * Ysize * 4);
@@ -474,13 +475,14 @@ LOGE("copy8topixel");
 	}
 }
 
+
+
+extern void int_refresh(int xb_, int yb_, int xe_, int ye_);
+
 void
 flushmemscreen(Rectangle r)
 {
 	char chanbuf[16];
-LOGE("flushmemscreen: W=%d, H=%d, xscreendata=%x, displaydepth=%d, xscreendepth=%d",
-	Xsize, Ysize, xscreendata, displaydepth, xscreendepth
-	);
 
 	// Clip to screen
 	if(r.min.x < 0)
@@ -488,15 +490,21 @@ LOGE("flushmemscreen: W=%d, H=%d, xscreendata=%x, displaydepth=%d, xscreendepth=
 	if(r.min.y < 0)
 		r.min.y = 0;
 	if(r.max.x >= Xsize)
-		r.max.x = Xsize - 1;
+		r.max.x = Xsize; // - 1;
 	if(r.max.y >= Ysize)
-                r.max.y = Ysize - 1;
+		r.max.y = Ysize; // - 1;
 	if(r.max.x <= r.min.x || r.max.y <= r.min.y)
 		return;
-
+	
 	if(xscreendata == NULL)
 		return;
+
+	LOGE("flushmemscreen: rect=(%d, %d)-(%d, %d), xscreendata=%x, displaydepth=%d, xscreendepth=%d",
+			r.min.x, r.min.y, r.max.x, r.max.y, xscreendata, displaydepth, xscreendepth
+			);
 	
+#if 0
+	if(gscreendata != xscreendata)
 	switch(displaydepth){
 	case 32:
 		copy32to32(r);
@@ -525,6 +533,9 @@ LOGE("flushmemscreen: W=%d, H=%d, xscreendata=%x, displaydepth=%d, xscreendepth=
 			chantostr(chanbuf, displaychan), xscreendepth);
 		cleanexit(0);
 	}
+#endif
+
+	int_refresh(r.min.x, r.min.y, r.max.x, r.max.y);
 
 #if 0
 	XLockDisplay(xdisplay);
