@@ -38,6 +38,7 @@ extern	int	mflag;
 
 	int is_run = 0;
 
+
 static void
 usage(void)
 {
@@ -243,19 +244,32 @@ nofence(void)
 {
 }
 
+void loaddeftkfont()
+{
+	char deftkfont[128];
+	FILE* f = fopen("/sdcard/Inferno/lib/tk/deftkfont.txt", "r");
+	if(f){
+		memset(deftkfont, 0, sizeof(deftkfont));
+		fread(deftkfont, sizeof(deftkfont)-1, 1, f);
+		fclose(f);
+LOGE("amain 1 deftkfont=%s", deftkfont);
+
+		tkfont = strdup(deftkfont);
+	}
+LOGE("amain 2 tkfont=%s", tkfont);
+}
+
 void
 amain() //int argc, char *argv[])
 {
 	char *opt, *p;
 	char *enva[20];
 	int envc;
-\
+
 	if(is_run)
 		return;
-
-	is_run = 1;
-
-LOGE("amain");
+	else
+		is_run = 1;
 
 	if(coherence == nil)
 		coherence = nofence;
@@ -267,7 +281,7 @@ LOGE("amain");
 	strecpy(rootdir, rootdir+sizeof(rootdir), "/sdcard/Inferno");
 /**/
 	opt = (char*)malloc(256);
-	sprint(opt, "-r/sdcard/Inferno -g%dx%d wm/wm", Xsize, Ysize);
+	sprint(opt, "-r/sdcard/Inferno -g%dx%d wm/awm", Xsize, Ysize);
 	//opt = "-r/sdcard/Inferno wm/awm";
 	//opt = getenv("EMU");
 	if(opt != nil && *opt != '\0') {
@@ -280,7 +294,9 @@ LOGE("amain");
 /**/
 //	option(argc, argv, usage);
 	displaychan = strtochan("x8r8g8b8");
-	eve = strdup("inferno");
+//	eve = strdup("inferno");
+
+	loaddeftkfont();
 
 	cflag = 0;
 	
@@ -324,12 +340,10 @@ emuinit(void *imod)
 
 	strcpy(up->text, "main");
 
-#if 1
 	if(kopen("#c/cons", OREAD) != 0)
 		fprint(2, "failed to make fd0 from #c/cons: %r\n");
 	kopen("#c/cons", OWRITE);
 	kopen("#c/cons", OWRITE);
-#endif
 
 	/* the setid cannot precede the bind of #U */
 	kbind("#U", "/", MAFTER|MCREATE);
@@ -340,7 +354,6 @@ emuinit(void *imod)
 	kbind("#c", "/dev", MBEFORE);
 	kbind("#p", "/prog", MREPL);
 	kbind("#d", "/fd", MREPL);
-#if 1
 	kbind("#I", "/net", MAFTER);	/* will fail on Plan 9 */
 
 	/* BUG: we actually only need to do these on Plan 9 */
@@ -360,9 +373,8 @@ emuinit(void *imod)
 		free(wdir);
 	}
 
-LOGE("emuinit 3");
+//LOGE("emuinit 3");
 	kproc("main", disinit, imod, KPDUPFDG|KPDUPPG|KPDUPENVG);
-#endif
 
 //	for(;;)
 //		ospause(); 

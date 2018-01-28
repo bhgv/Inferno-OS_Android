@@ -208,11 +208,11 @@ libinit(char *imod)
 	p = newproc();
 	kprocinit(p);
 
-	pw = getpwuid(getuid());
-	if(pw != nil)
-		kstrdup(&eve, pw->pw_name);
-	else
-		print("cannot getpwuid\n");
+//	pw = getpwuid(getuid());
+//	if(pw != nil)
+		kstrdup(&eve, "Inferno" /*pw->pw_name*/);
+//	else
+//		print("cannot getpwuid\n");
 
 	p->env->uid = getuid();
 	p->env->gid = getgid();

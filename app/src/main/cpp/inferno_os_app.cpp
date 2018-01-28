@@ -111,13 +111,13 @@ static int32_t ProcessAndroidInput(struct android_app *app, AInputEvent *event) 
                     int y = AMotionEvent_getY(event, 0);
 LOGI("touch X=%d, Y=%d", x, y);
                     xmouse_btn(x, y, 1);
-                    return 1;
+                    //return 1;
                 }else if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_UP) {
 					int x = AMotionEvent_getX(event, 0);
 					int y = AMotionEvent_getY(event, 0);
 LOGI("un touch X=%d, Y=%d", x, y );
 					xmouse_btn(x, y, 0);
-					return 1;
+					//return 1;
 				}
         		engine->StartAnimation(true);
         		return 1;
