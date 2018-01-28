@@ -244,15 +244,17 @@ nofence(void)
 {
 }
 
-void loaddeftkfont()
+void loaddeftkfont(char *sdcard)
 {
+	char path[256];
 	char deftkfont[128];
-	FILE* f = fopen("/sdcard/Inferno/lib/tk/deftkfont.txt", "r");
+
+	snprint(path, 255, "%s/lib/tk/deftkfont.txt", sdcard);
+	FILE* f = fopen(path, "r");
 	if(f){
 		memset(deftkfont, 0, sizeof(deftkfont));
 		fread(deftkfont, sizeof(deftkfont)-1, 1, f);
 		fclose(f);
-LOGE("amain 1 deftkfont=%s", deftkfont);
 
 		tkfont = strdup(deftkfont);
 	}
@@ -266,6 +268,8 @@ amain() //int argc, char *argv[])
 	char *enva[20];
 	int envc;
 
+	char sdcard_path[128];
+
 	if(is_run)
 		return;
 	else
@@ -278,10 +282,11 @@ amain() //int argc, char *argv[])
 	/* set default root now, so either $EMU or -r can override it later */
 //	if((p = getenv("INFERNO")) != nil || (p = getenv("ROOT")) != nil)
 //		strecpy(rootdir, rootdir+sizeof(rootdir), p);
-	strecpy(rootdir, rootdir+sizeof(rootdir), "/sdcard/Inferno");
+	snprint(sdcard_path, 127, "%s/Inferno", getenv("EXTERNAL_STORAGE"));
+	strecpy(rootdir, rootdir+sizeof(rootdir), sdcard_path);
 /**/
 	opt = (char*)malloc(256);
-	sprint(opt, "-r/sdcard/Inferno -g%dx%d wm/awm", Xsize, Ysize);
+	sprint(opt, "-r%s -g%dx%d wm/awm", sdcard_path, Xsize, Ysize);
 	//opt = "-r/sdcard/Inferno wm/awm";
 	//opt = getenv("EMU");
 	if(opt != nil && *opt != '\0') {
@@ -296,7 +301,7 @@ amain() //int argc, char *argv[])
 	displaychan = strtochan("x8r8g8b8");
 //	eve = strdup("inferno");
 
-	loaddeftkfont();
+	loaddeftkfont(sdcard_path);
 
 	cflag = 0;
 	
@@ -395,6 +400,8 @@ errorf(char *fmt, ...)
 void
 error(char *err)
 {
+LOGE("Error: %s", err);
+
 	if(err != up->env->errstr && up->env->errstr != nil)
 		kstrcpy(up->env->errstr, err, ERRMAX);
 //	ossetjmp(up->estack[NERR-1]);
@@ -449,7 +456,7 @@ panic(char *fmt, ...)
 	va_start(arg, fmt);
 	vseprint(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-//	fprint(2, "panic: %s\n", buf);
+	fprint(2, "panic: %s\n", buf);
 	if(sflag)
 		abort();
 
@@ -468,7 +475,7 @@ iprint(char *fmt, ...)
 	n = vseprint(buf, buf+sizeof buf, fmt, va) - buf;
 	va_end(va);
 
-//	write(1, buf, n);
+	write(1, buf, n);
 	return 1;
 }
 

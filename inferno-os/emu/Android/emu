@@ -20,14 +20,11 @@ dev
 	ip	ipif6-posix ipaux
 	mem
 
-#	draw	#win-x11a
-#	pointer
-#	snarf
+	snarf
 
 #	ip	ipif6-posix ipaux
 #	eia
 #	audio	audio-oss
-#	mem
 
 lib
 	interp
@@ -102,6 +99,7 @@ root
 	/chan	/
 	/nvfs	/
 	/env	/
+	/n
 #	/dis
 #	/n
 #	/icons

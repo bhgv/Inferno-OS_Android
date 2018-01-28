@@ -22,6 +22,18 @@
 #include	<sys/syscall.h>
 #define	getpid()	syscall(SYS_getpid)
 
+
+
+#include <android/log.h>
+	
+#define  LOG_TAG    "Inferno OS"
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+
+
+
+
 enum
 {
 	DELETE	= 0x7f,
@@ -45,6 +57,7 @@ sysfault(char *what, void *addr)
 	char buf[64];
 
 	snprint(buf, sizeof(buf), "sys: %s%#p", what, addr);
+LOGE("sysfault: %s", buf);
 	disfault(nil, buf);
 }
 
@@ -53,6 +66,8 @@ trapILL(int signo, siginfo_t *si, void *a)
 {
 	USED(signo);
 	USED(a);
+LOGE("trapILL: illegal instruction pc=", si->si_addr);
+
 	sysfault("illegal instruction pc=", si->si_addr);
 }
 
@@ -82,6 +97,7 @@ trapFPE(int signo, siginfo_t *si, void *a)
 	USED(signo);
 	USED(a);
 	snprint(buf, sizeof(buf), "sys: fp: exception status=%.4lux pc=%#p", getfsr(), si->si_addr);
+LOGE("trapFPE: %s", buf);
 	disfault(nil, buf);
 }
 
@@ -91,6 +107,7 @@ trapUSR1(int signo)
 	int intwait;
 
 	USED(signo);
+LOGI("trapUSR1: signo=%d", signo);
 
 	intwait = up->intwait;
 	up->intwait = 0;	/* clear it to let proc continue in osleave */
@@ -128,10 +145,14 @@ termrestore(void)
 	tcsetattr(0, TCSANOW, &tinit);
 }
 
+
+extern int is_run;
+
 void
 cleanexit(int x)
 {
 	USED(x);
+LOGE("cleanexit");
 
 	if(up->intwait) {
 		up->intwait = 0;
@@ -140,17 +161,23 @@ cleanexit(int x)
 
 	if(dflag == 0)
 		termrestore();
+//	kill(0, SIGKILL);
 
-	kill(0, SIGKILL);
-	exit(0);
+//	exit(0);
 }
 
 void
 osreboot(char *file, char **argv)
 {
+LOGE("osreboot");
+
 	if(dflag == 0)
 		termrestore();
 	//execvp(file, argv);
+
+	is_run = 0;
+	amain();
+	
 	error("reboot failure");
 }
 

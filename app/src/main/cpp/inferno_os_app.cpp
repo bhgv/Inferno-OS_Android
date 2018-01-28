@@ -22,7 +22,7 @@
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 
-const int kFRAME_DISPLAY_TIME = 2;
+const int kFRAME_DISPLAY_TIME = 1;
 
 extern "C" {
 	//extern
