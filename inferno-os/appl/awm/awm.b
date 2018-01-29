@@ -442,10 +442,10 @@ sizewin(ptrc: chan of ref Pointer, c: ref Client, w: ref Window, minsize: Point)
 	offset := Point(0, 0);
 	r := w.r;
 	show = Minx|Miny|Maxx|Maxy;
-	if(xy.in(w.r) == 0){
-		r = (xy, xy);
-		move = Maxx|Maxy;
-	}else {
+#	if(xy.in(w.r) == 0){
+#		r = (xy, xy);
+#		move = Maxx|Maxy;
+#	}else {
 		if(xy.x < (r.min.x+r.max.x)/2){
 			move=Minx;
 			offset.x = xy.x - r.min.x;
@@ -460,7 +460,7 @@ sizewin(ptrc: chan of ref Pointer, c: ref Client, w: ref Window, minsize: Point)
 			move |= Maxy;
 			offset.y = xy.y - r.max.y;
 		}
-	}
+#	}
 	return reshape(c, w.tag, sweep(ptrc, r, offset, borders, move, show, minsize));
 }
 

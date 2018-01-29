@@ -237,7 +237,7 @@ libinit(char *imod)
 
 //	pw = getpwuid(getuid());
 //	if(pw != nil)
-		kstrdup(&eve, "Inferno" /*pw->pw_name*/);
+		kstrdup(&eve, "inferno" /*pw->pw_name*/);
 //	else
 //		print("cannot getpwuid\n");
 

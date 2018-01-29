@@ -234,6 +234,11 @@ handlerequest(clientid: string, args: list of string): string
 iconify(id, label: string)
 {
 	label = condenselabel(label);
+	
+	padf := ".toolbar.sp"+id;
+	tk->cmd(tbtop, "frame " + padf + " -width 2");
+	cmd(tbtop, "pack " + padf + " -side left -fill y");
+
 	e := tk->cmd(tbtop, "button .toolbar." +id+" -command {send task "+id+"} -takefocus 0");
 	cmd(tbtop, ".toolbar." +id+" configure -text '" + label);
 	if(e[0] != '!')
@@ -248,6 +253,7 @@ deiconify(id: string)
 		tkclient->wmctl(tbtop, sys->sprint("ctl %q untask", id));
 		tkclient->wmctl(tbtop, sys->sprint("ctl %q kbdfocus 1", id));
 	}
+	tk->cmd(tbtop, "destroy .toolbar.sp"+id);
 	cmd(tbtop, "update");
 }
 

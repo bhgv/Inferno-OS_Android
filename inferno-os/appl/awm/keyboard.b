@@ -33,13 +33,14 @@ Keybd: module
 	init:	fn(nil: ref Draw->Context, nil: list of string);
 };
 
-FONT: con "/fonts/lucidasans/news.10.font";
+#FONT: con "/fonts/lucidasans/news.10.font";
+FONT: con "/fonts/vera/vera/vera.20.font";
 SPECFONT: con "/fonts/lucidasans/unicode.8.font";
 
 # size in pixels
 #KEYSIZE: con 16;
-KEYSIZE: con 40; #13;
-KEYSPACE: con 5; #2;
+KEYSIZE: con 41; #13;
+KEYSPACE: con 7; #2;
 KEYBORDER: con 1;
 KEYGAP: con KEYSPACE - (2 * KEYBORDER);
 #ENDGAP: con 2 - KEYBORDER;

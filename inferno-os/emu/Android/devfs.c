@@ -1,4 +1,4 @@
-#include "devfs-posix.c"
+#include "devfs-posix-a.c"
 
 #include	<linux/hdreg.h>
 #include	<linux/fs.h>

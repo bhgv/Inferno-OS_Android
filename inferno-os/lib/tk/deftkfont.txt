@@ -1,1 +1,1 @@
-/fonts/lucidasans/unicode.10.font
+/fonts/vera/vera/vera.20.font

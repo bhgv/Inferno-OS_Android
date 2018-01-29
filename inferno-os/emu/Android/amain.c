@@ -400,7 +400,7 @@ errorf(char *fmt, ...)
 void
 error(char *err)
 {
-LOGE("Error: %s", err);
+LOGE("Error: %s (errno=%d: %s)", err, errno, strerror(errno));
 
 	if(err != up->env->errstr && up->env->errstr != nil)
 		kstrcpy(up->env->errstr, err, ERRMAX);
