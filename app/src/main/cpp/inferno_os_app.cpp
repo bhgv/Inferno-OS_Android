@@ -102,22 +102,35 @@ class Engine {
 };
 
 static int32_t ProcessAndroidInput(struct android_app *app, AInputEvent *event) {
+	static int mbtns = 0;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
 	switch(AInputEvent_getType(event)){
 		case AINPUT_EVENT_TYPE_MOTION:
 			{
-				if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN) {
+				int32_t action = AKeyEvent_getAction(event);
+				if (action == AKEY_EVENT_ACTION_DOWN) {
                     int x = AMotionEvent_getX(event, 0);
                     int y = AMotionEvent_getY(event, 0);
 LOGI("touch X=%d, Y=%d", x, y);
                     xmouse_btn(x, y, 1);
+					mbtns = 1;
                     //return 1;
-                }else if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_UP) {
+                }else if (action == AKEY_EVENT_ACTION_UP) {
 					int x = AMotionEvent_getX(event, 0);
 					int y = AMotionEvent_getY(event, 0);
 LOGI("un touch X=%d, Y=%d", x, y );
 					xmouse_btn(x, y, 0);
+					mbtns = 0;
 					//return 1;
+				}else{
+					action = AMotionEvent_getAction( event );
+					if( action == AMOTION_EVENT_ACTION_MOVE )
+					{
+						int x = AMotionEvent_getX( event, 0 );
+						int y = AMotionEvent_getY( event, 0 );
+LOGI("mmove X=%d, Y=%d", x, y );
+						xmouse_btn(x, y, mbtns);
+					}
 				}
         		engine->StartAnimation(true);
         		return 1;
@@ -177,13 +190,12 @@ static void ProcessAndroidCmd(struct android_app *app, int32_t cmd) {
                               ANativeWindow_getHeight(app->window),
                               WINDOW_FORMAT_RGBX_8888	//WINDOW_FORMAT_RGB_565	//WINDOW_FORMAT_RGBX_8888	//WINDOW_FORMAT_RGB_565
                 );
-                engine->PrepareDrawing();
-                engine->UpdateDisplay();
-                engine->StartAnimation(true);
-
 				ANativeActivity* activity = app->activity;
-
 				goToFullscreenMode(activity);
+
+                engine->PrepareDrawing();
+                engine->StartAnimation(true);
+                engine->UpdateDisplay();
 
 LOGE("create pre amain");
 				amain();

@@ -442,10 +442,10 @@ sizewin(ptrc: chan of ref Pointer, c: ref Client, w: ref Window, minsize: Point)
 	offset := Point(0, 0);
 	r := w.r;
 	show = Minx|Miny|Maxx|Maxy;
-#	if(xy.in(w.r) == 0){
-#		r = (xy, xy);
-#		move = Maxx|Maxy;
-#	}else {
+	if(xy.in(w.r) == 0){
+		r = (xy, xy);
+		move = Maxx|Maxy;
+	}else {
 		if(xy.x < (r.min.x+r.max.x)/2){
 			move=Minx;
 			offset.x = xy.x - r.min.x;
@@ -460,7 +460,7 @@ sizewin(ptrc: chan of ref Pointer, c: ref Client, w: ref Window, minsize: Point)
 			move |= Maxy;
 			offset.y = xy.y - r.max.y;
 		}
-#	}
+	}
 	return reshape(c, w.tag, sweep(ptrc, r, offset, borders, move, show, minsize));
 }
 
@@ -500,11 +500,19 @@ sweep(ptr: chan of ref Pointer, r: Rect, offset: Point, borders: array of ref Im
 		r.min.y = screen.image.r.min.y;
 		r = r.canon();
 	}
-	if(r.dx() < min.x){
-		if(move & Maxx)
-			r.max.x = r.min.x + min.x;
-		else
-			r.min.x = r.max.x - min.x;
+#	if(r.dx() < min.x){
+	if(r.dx() < 0){
+		if(move & Maxx){
+			t := r.min;
+			r.min = r.max;
+			r.max = t;
+#			r.max.x = r.min.x + min.x;
+		}else{
+			t := r.min;
+			r.min = r.max;
+			r.max = t;
+#			r.min.x = r.max.x - min.x;
+		}
 	}
 	if(r.dy() < min.y){
 		if(move & Maxy)
