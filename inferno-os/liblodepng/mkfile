@@ -1,0 +1,9 @@
+<../mkconfig
+
+LIB=liblodepng.a
+OFILES=\
+	lodepng.$O\
+
+HFILES=	$ROOT/include/png/lodepng.h
+
+<$ROOT/mkfiles/mksyslib-$SHELLTYPE

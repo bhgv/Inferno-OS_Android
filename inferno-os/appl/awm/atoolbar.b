@@ -264,7 +264,7 @@ layout(top: ref Tk->Toplevel)
 	if(r.dy() < 480)
 		h = tk->rect(top, ".b", Tk->Border|Tk->Required).dy();
 	cmd(top, ". configure -x " + string r.min.x +
-			" -y " + string (r.max.y - h) +
+			" -y " + string r.min.y +  #(r.max.y - h) +
 			" -width " + string r.dx() +
 			" -height " + string h);
 	cmd(top, "update");
@@ -284,9 +284,10 @@ toolbar(ctxt: ref Draw->Context, startmenu: int,
 	tk->namechan(tbtop, task, "task");
 	cmd(tbtop, "frame .toolbar");
 	if (startmenu) {
-		cmd(tbtop, "menubutton .toolbar.start -menu .m -borderwidth 0 -bitmap vitabig.bit");
+		cmd(tbtop, "menubutton .toolbar.start -menu .m -borderwidth 0 -bitmap vitabig.png");
 		cmd(tbtop, "pack .toolbar.start -side left");
 	}
+
 	cmd(tbtop, "pack .toolbar -fill x");
 	cmd(tbtop, "menu .m");
 	return tbtop;

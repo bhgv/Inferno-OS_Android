@@ -100,6 +100,7 @@ enum
 	OPTsticky,	/* sticky (any comb. of chars n, s, e, w) */
 	OPTlist,		/* list of text values */
 	OPTflags,		/* more than one OPTflag */
+	OPTsvg,		/* Option specifies bitmap file */
 
 	BoolX		= 0,
 	BoolT,

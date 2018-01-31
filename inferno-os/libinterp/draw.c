@@ -10,6 +10,34 @@
 #include "memdraw.h"
 #include "memlayer.h"
 
+
+
+#include <stdio.h>
+#include <string.h>
+#include <float.h>
+#include <math.h>
+
+#define NANOSVG_IMPLEMENTATION
+#define NANOSVG_ALL_COLOR_KEYWORDS	// Include full list of color keywords.
+#include "svg/nanosvg.h"
+#define NANOSVGRAST_IMPLEMENTATION
+#include "svg/nanosvgrast.h"
+
+
+#include "png/lodepng.h"
+
+
+	
+#include <android/log.h>
+	
+#define  LOG_TAG    "Inferno DRAW"
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+
+
+
+
 /*
  * When a Display is remote, it must be locked to synchronize the
  * outgoing message buffer with the refresh demon, which runs as a
@@ -107,6 +135,8 @@ char		deffontname[] = "*default*";
 void		refreshslave(Display*);
 void		subfont_close(Subfont*);
 void		freeallsubfonts(Display*);
+
+extern char rootdir[];
 
 void
 drawmodinit(void)
@@ -1187,13 +1217,160 @@ display_open(Display *disp, char *name)
 {
 	Image *i;
 	int fd;
+	int len = strlen(name);
+	char c1, c2, c3, c4;
 
-	fd = libopen(name, OREAD);
-	if(fd < 0)
-		return nil;
+	c4 = name[len-1];
+	c3 = name[len-2];
+	c2 = name[len-3];
+	c1 = name[len-4];
 
-	i = readimage(disp, fd, 1);
-	libclose(fd);
+	if(
+		c1 == '.' &&
+		(c2 == 'p' || c2 == 'P') &&
+		(c3 == 'n' || c3 == 'N') &&
+		(c4 == 'g' || c4 == 'G') 
+	){
+		unsigned error;
+		unsigned char* image;
+		unsigned w, h, x, y;
+
+		char filename[128];
+
+		Rectangle r;
+	
+		int locked;
+		int nbytes = 0;
+
+
+		snprint(filename, 127, "%s/%s", rootdir, name);
+//LOGI("PNG 0: showing %s\n", filename);
+		/*load the PNG in one function call*/
+		error = lodepng_decode32_file(&image, &w, &h, filename);
+
+//LOGI("PNG %d: image=%x, w=%d, h=%d\n", 1, image, w, h);
+		/*stop if there is an error*/
+		if(error || image == nil){
+			LOGE("PNG decoder error %u: %s\n", error, lodepng_error_text(error));
+			return nil;
+		}
+
+		r.min.x = 0;
+		r.min.y = 0;
+		r.max = r.min;
+		r.max.x += w;
+		r.max.y += h;
+	
+		nbytes = w*h*4;
+
+		{
+			int j;
+			for(j=0; j<nbytes; j+=4){
+				char tmp = image[j];
+				image[j] = image[j+2];
+				image[j+2] = tmp;
+			}
+		}
+		
+//LOGI("PNG %d:\n", 2);
+		locked = lockdisplay(disp);
+		i = allocimage(disp, r, ARGB32, 0, DTransparent);
+//LOGI("PNG %d: i=%x\n", 3, i);
+		if(i != nil){
+//LOGI("PNG 3.5: nb=%d\n",			loadimage(i, r, image, nbytes)  );
+			if (loadimage(i, r, image, nbytes) != nbytes) {
+				freeimage(i);
+				i = nil;
+			}
+		}
+//LOGI("PNG 3.7:\n");
+		free(image);
+//LOGI("PNG %d:\n", 4);
+		if(locked)
+			unlockdisplay(disp);
+//LOGI("PNG %d:\n", 5);
+		
+	}else if(
+		c1 == '.' &&
+		(c2 == 's' || c2 == 'S') &&
+		(c3 == 'v' || c3 == 'V') &&
+		(c4 == 'g' || c4 == 'G') 
+	){
+		unsigned char* image = nil;
+		unsigned w, h, x, y;
+		char filename[128];
+		
+ 		Rectangle r;
+		
+		int locked;
+		int nbytes = 0;
+			
+		NSVGimage *svg = nil;
+		
+		NSVGrasterizer *rast = nil;
+	
+		float scale = 1.0;
+			
+		locked = 0;
+	
+		snprint(filename, 127, "%s/%s", rootdir, name);
+//LOGI("SVG showing %s\n", filename);
+		svg = nsvgParseFromFile(filename, "px", 96.0f);
+		if(svg == nil){
+			return nil;
+		}
+		
+		w = (int)(scale * svg->width);
+		h = (int)(scale * svg->height);
+		
+		rast = nsvgCreateRasterizer();
+		if (rast == nil) {
+			nsvgDelete(svg);
+			fprint(2, "Could not init rasterizer.\n");
+			return nil;
+		}
+		
+		image = malloc(w*h*4);
+		if (image == NULL) {
+			fprint(2, "Could not alloc image buffer.\n");
+			nsvgDeleteRasterizer(rast);
+			nsvgDelete(svg);
+			return nil;
+		}
+		
+		nsvgRasterize(rast, svg, 0,0, scale, image, w, h, w*4);
+		
+		nsvgDeleteRasterizer(rast);
+		nsvgDelete(svg);
+		
+		r.min.x = 0;
+		r.min.y = 0;
+		r.max = r.min;
+		r.max.x += w;
+		r.max.y += h;
+		
+		nbytes = w*h*4;
+		
+		locked = lockdisplay(disp);
+		i = allocimage(disp, r, ARGB32, 0, DTransparent);
+		if(i != nil){
+			if (loadimage(i, r, image, nbytes) != nbytes) {
+				freeimage(i);
+				i = nil;
+			}
+		}
+		free(image);
+		if (locked)
+			unlockdisplay(disp);
+	
+	}else{
+		fd = libopen(name, OREAD);
+		if(fd < 0)
+			return nil;
+
+		i = readimage(disp, fd, 1);
+		libclose(fd);
+	}
 	return i;
 }
 

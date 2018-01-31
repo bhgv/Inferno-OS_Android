@@ -75,6 +75,10 @@ add_library(libtk STATIC IMPORTED)
 set_target_properties(libtk PROPERTIES IMPORTED_LOCATION
     ${infrlib_DIR}/libtk.a)
 
+add_library(liblodepng STATIC IMPORTED)
+set_target_properties(liblodepng PROPERTIES IMPORTED_LOCATION
+    ${infrlib_DIR}/liblodepng.a)
+
 
 # build native_app_glue as a static lib
 include_directories(${ANDROID_NDK}/sources/android/native_app_glue)
@@ -86,7 +90,7 @@ add_library(native_app_glue STATIC
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fPIC -fPIE")
 
-# Export ANativeActivity_onCreate(), 
+# Export ANativeActivity_onCreate(),
 # Refer to: https://github.com/android-ndk/ndk/issues/381.
 set(CMAKE_SHARED_LINKER_FLAGS
     "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate -fPIC -fPIE")
@@ -99,6 +103,7 @@ add_library(inferno_os_app SHARED
 target_link_libraries(inferno_os_app android log m native_app_glue m
     emu
     libinterp
+    liblodepng
     libbio
     libdraw
     libdynld
@@ -115,5 +120,4 @@ target_link_libraries(inferno_os_app android log m native_app_glue m
     )
 #    -Wl,--start-group
 #     -Wl,--end-group
-#    libstyx
 #   libprefab
