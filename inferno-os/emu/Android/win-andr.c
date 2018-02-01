@@ -272,10 +272,9 @@ LOGE("attachscreen");
 		 * hence a flushmemscreen before xscreendata is initialized
 		 */
 
-	*chan = displaychan;		/* not every channel description will work */
-	*d = chantodepth(displaychan);
-	displaydepth = *d;
-
+		*chan = displaychan;		/* not every channel description will work */
+		*d = chantodepth(displaychan);
+		displaydepth = *d;
 	}
 	else{
 		*chan = displaychan;
@@ -321,7 +320,8 @@ LOGE("attachscreen");
 //		kproc("xkbdproc", xkbdproc, NULL/*xkbdcon*/, 0/*KPX11*/);	/* silly stack size for bloated X11 */
 
 //#undef malloc
-		gscreendata = xscreendata; //malloc(Xsize * Ysize * (displaydepth >> 3));
+		gscreendata = xscreendata;
+//		gscreendata = malloc(Xsize * Ysize * (displaydepth >> 3));
 LOGE("attachscreen: gscreendata=%x, (displaydepth>>3)=%d", gscreendata, (displaydepth>>3));
 //#define malloc malloc_
 //		xscreendata = malloc(Xsize * Ysize * 4);

@@ -147,6 +147,7 @@ termrestore(void)
 
 
 extern int is_run;
+extern void ioa_showsplash();
 
 void
 cleanexit(int x)
@@ -161,6 +162,10 @@ LOGE("cleanexit");
 
 	if(dflag == 0)
 		termrestore();
+
+	
+	ioa_showsplash();
+	pexit(NULL, 0);
 //	kill(0, SIGKILL);
 
 //	exit(0);

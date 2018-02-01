@@ -148,6 +148,93 @@ LOGI("Key event: action=%d keyCode=%d metaState=0x%x",
     return 0;
 }
 
+
+extern "C" {
+	
+#define LCT_RGBA  6 /*RGB with alpha: 8,16 bit*/
+
+typedef unsigned int LodePNGColorType;
+
+extern void free_(void *v);
+
+extern unsigned lodepng_decode_memory(unsigned char** out, unsigned* w, unsigned* h, unsigned char* buffer, size_t buffersize,
+								 LodePNGColorType colortype, unsigned bitdepth);
+
+void lodepng_free(unsigned char* buffer){ free_((void*)buffer); }
+
+
+AAssetManager* assetManager = NULL;
+
+void ioa_showsplash(){
+	if(assetManager == NULL || xscreendata == NULL) return;
+	
+	char filePath[] = "images/splash.png";
+	AAsset* file = AAssetManager_open(assetManager, filePath, AASSET_MODE_BUFFER);
+	size_t fileLength = AAsset_getLength(file);
+	
+	char* fileContent = new char[fileLength+1];
+	
+	AAsset_read(file, fileContent, fileLength);
+	fileContent[fileLength] = '\0';
+	
+	unsigned char* buffer = NULL;
+	unsigned error;
+	unsigned w, h;
+	
+	error = lodepng_decode_memory(&buffer, &w, &h, (unsigned char*)fileContent, fileLength, LCT_RGBA, 8);
+
+	int x0, y0;
+
+	if(Xsize >= Ysize){
+		x0 = (Xsize - w) / 2;
+		y0 = (Ysize - h) / 2;
+	}else{
+		x0 = (Ysize - w) / 2;
+		y0 = (Xsize - h) / 2;
+	}
+	
+	for(int i = 0; i < Ysize; i++){
+		for(int j = 0; j < Xsize*4; j += 4){
+			xscreendata[ i*Xsize*4 + j + 0] = 0;
+			xscreendata[ i*Xsize*4 + j + 1] = 0;
+			xscreendata[ i*Xsize*4 + j + 2] = 0;
+			xscreendata[ i*Xsize*4 + j + 3] = 0xff;
+		}
+	}
+
+	if(buffer)
+	for(int i = 0; i < Ysize; i++){
+		for(int j = 0; j < Xsize; j += 1){
+			int x, y;
+			if(Xsize >= Ysize){
+				x = j - x0; y = i - y0;
+				if( x >= 0 && x < w && y >= 0 && y < h){
+					xscreendata[ i*Xsize*4 + j*4 + 0] = buffer[y*w*4 + x*4 + 2];
+					xscreendata[ i*Xsize*4 + j*4 + 1] = buffer[y*w*4 + x*4 + 1];
+					xscreendata[ i*Xsize*4 + j*4 + 2] = buffer[y*w*4 + x*4 + 0];
+					xscreendata[ i*Xsize*4 + j*4 + 3] = 0xff; //buffer[i*w*4 + j + 3];
+				}
+			}else{
+				x = i - x0; y = j - y0;
+				if( x >= 0 && x < w && y >= 0 && y < h ){
+					y = h - y;
+					xscreendata[ i*Xsize*4 + j*4 + 0] = buffer[y*w*4 + x*4 + 2];
+					xscreendata[ i*Xsize*4 + j*4 + 1] = buffer[y*w*4 + x*4 + 1];
+					xscreendata[ i*Xsize*4 + j*4 + 2] = buffer[y*w*4 + x*4 + 0];
+					xscreendata[ i*Xsize*4 + j*4 + 3] = 0xff; //buffer[i*w*4 + j + 3];
+				}
+			}
+		}
+	}
+
+	lodepng_free(buffer);
+	delete[] fileContent;
+}
+
+} // extern "C"
+
+
+
 static void ProcessAndroidCmd(struct android_app *app, int32_t cmd) {
     static int32_t format = WINDOW_FORMAT_RGB_565;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
@@ -158,27 +245,14 @@ static void ProcessAndroidCmd(struct android_app *app, int32_t cmd) {
 				Ysize = ANativeWindow_getHeight(app->window);
 
 				if(xscreendata == NULL){
-	                xscreendata = new unsigned char[Xsize * Ysize * 4];
-					if(xscreendata != NULL){
-						/**/
-						for(int i = 0; i < Ysize; i++){
-							for(int j = 0; j < Xsize*4; j += 4){
-								if((int)(j/4) > i){
-									xscreendata[ i*Xsize*4 + j + 0] = 0;
-									xscreendata[ i*Xsize*4 + j + 1] = 0xff;
-									xscreendata[ i*Xsize*4 + j + 2] = 0xff;
-									xscreendata[ i*Xsize*4 + j + 3] = 0;
-								}else{
-									xscreendata[ i*Xsize*4 + j + 0] = 0;
-									xscreendata[ i*Xsize*4 + j + 1] = 0;
-									xscreendata[ i*Xsize*4 + j + 2] = 0;
-									xscreendata[ i*Xsize*4 + j + 3] = 0;
-								}
-							}
-						}
-						/**/
-					}
-			
+					xscreendata = new unsigned char[Xsize * Ysize * 4];
+
+LOGE("create pre amain");
+					amain();
+LOGE("create post amain");
+
+					assetManager = app->activity->assetManager;
+
 	                // save current format to format variable, and set
 	                // display format to 565 to save time coping. normally
 	                // 565 might be buggy ( if 565 works, 32 bit mostly like
@@ -197,9 +271,9 @@ static void ProcessAndroidCmd(struct android_app *app, int32_t cmd) {
                 engine->StartAnimation(true);
                 engine->UpdateDisplay();
 
-LOGE("create pre amain");
-				amain();
-LOGE("create post amain");
+//LOGE("create pre amain");
+//				amain();
+//LOGE("create post amain");
             }
             break;
         case APP_CMD_TERM_WINDOW:
@@ -320,11 +394,12 @@ bool Engine::UpdateDisplay(void) {
 	
     ANativeWindow_unlockAndPost(app_->window);
 
-	if(is_int_refresh == 0)
-		clock_gettime(CLOCK_MONOTONIC, &frameStartTime_);
-	else
+//	if(is_int_refresh == 0)
+//		clock_gettime(CLOCK_MONOTONIC, &frameStartTime_);
+//	else
 		is_int_refresh = 0;
 	
+	clock_gettime(CLOCK_MONOTONIC, &frameStartTime_);
 	clock_gettime(CLOCK_MONOTONIC, &smallFrameStartTime_);
 	
     return true;
