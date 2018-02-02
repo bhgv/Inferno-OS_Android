@@ -12,6 +12,7 @@
       android:label="@string/app_name"
       android:hasCode="false">
     <activity android:name="android.app.NativeActivity"
+              android:screenOrientation="portrait"
               android:label="@string/app_name">
       <meta-data android:name="android.app.lib_name"
                  android:value="inferno_os_app" />
