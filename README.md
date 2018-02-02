@@ -1,4 +1,7 @@
 # Inferno-OS_Android
+
+![Screenshot](doku/screenshot.jpg)
+
 for Android > v4.0 (api 14)
 
 it is based on the last [official sources from Vitanuova](https://bitbucket.org/inferno-os/inferno-os/).
@@ -39,5 +42,3 @@ install this apk on the android
 copy this inferno tree (`./inferno-os`) to android by the path `/sdcard/Inferno`.
 
 run it
-
-![Screenshot](doku/screenshot.jpg)
