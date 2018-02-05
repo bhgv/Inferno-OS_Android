@@ -172,7 +172,7 @@ option(int argc, char *argv[], void (*badusage)(void))
 		poolopt(EARGF(badusage()));
 		break;
 	case 'f':		/* Set font path */
-		tkfont = EARGF(badusage());
+		tkfont = strdup( EARGF(badusage()) );
 		break;
 	case 'r':		/* Set inferno root */
 		strecpy(rootdir, rootdir+sizeof(rootdir), EARGF(badusage()));
@@ -244,25 +244,27 @@ nofence(void)
 {
 }
 
-void loaddeftkfont(char *sdcard)
+char* loadcmdstr(char *sdcard)
 {
-	char path[256];
-	char deftkfont[128];
+	char path[128];
+	char *cmdln = malloc(256);
+	FILE *f;
 
-	snprint(path, 255, "%s/lib/tk/deftkfont.txt", sdcard);
-	FILE* f = fopen(path, "r");
+	memset(cmdln, 0, 256);
+	snprint(path, 127, "%s/lib/startup/cmd_line.txt", sdcard);
+	
+	f = fopen(path, "r");
+LOGI("amain f=%x, cmdstr-path=%s", f, path);
 	if(f){
-		memset(deftkfont, 0, sizeof(deftkfont));
-		fread(deftkfont, sizeof(deftkfont)-1, 1, f);
+		fread(cmdln, 255, 1, f);
 		fclose(f);
-
-		tkfont = strdup(deftkfont);
 	}
-LOGE("amain 2 tkfont=%s", tkfont);
+LOGI("amain cmdstr=%s", cmdln);
+	return cmdln;
 }
 
 void
-amain() //int argc, char *argv[])
+amain()
 {
 	char *opt, *p;
 	char *enva[20];
@@ -279,29 +281,30 @@ amain() //int argc, char *argv[])
 		coherence = nofence;
 	quotefmtinstall();
 //	savestartup(argc, argv);
+
 	/* set default root now, so either $EMU or -r can override it later */
-//	if((p = getenv("INFERNO")) != nil || (p = getenv("ROOT")) != nil)
-//		strecpy(rootdir, rootdir+sizeof(rootdir), p);
 	snprint(sdcard_path, 127, "%s/Inferno", getenv("EXTERNAL_STORAGE"));
 	strecpy(rootdir, rootdir+sizeof(rootdir), sdcard_path);
-/**/
-	opt = (char*)malloc(256);
-	sprint(opt, "-r%s -g%dx%d wm/awm", sdcard_path, Xsize, Ysize);
-	//opt = "-r/sdcard/Inferno wm/awm";
+
+	opt = loadcmdstr(sdcard_path);
+	if(opt == nil || opt[0] == '\0'){
+		if(opt == nil)
+			opt = (char*)malloc(128);
+		snprint(opt, 127, "-r%s -g%dx%d wm/awm", sdcard_path, Xsize, Ysize);
+	}
 	//opt = getenv("EMU");
 	if(opt != nil && *opt != '\0') {
 		enva[0] = "emu";
 		envc = tokenize(opt, &enva[1], sizeof(enva)-1) + 1;
 		enva[envc] = 0;
-		//option(envc, enva, envusage);
+		option(envc, enva, envusage);
 	}
-	free(opt);
-/**/
+	if(opt)
+		free(opt);
+
 //	option(argc, argv, usage);
 	displaychan = strtochan("x8r8g8b8");
 //	eve = strdup("inferno");
-
-	loaddeftkfont(sdcard_path);
 
 	cflag = 0;
 	
