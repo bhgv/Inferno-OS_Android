@@ -21,10 +21,10 @@
 #pragma incomplete _off_	/* it's too hard */
 
 typedef unsigned int size_t;
-typedef unsigned short wchar_t;
+//typedef unsigned short wchar_t;
 typedef signed int ptrdiff_t;
 
-#define NULL ((void*)0)
+//#define NULL ((void*)0)
 
 
   /*************************************************************************/
@@ -45,7 +45,7 @@ typedef signed int ptrdiff_t;
 #define FREETYPE_PATCH 3
 
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_CONFIG_CONFIG_H
 #include FT_ERRORS_H
 #include FT_TYPES_H

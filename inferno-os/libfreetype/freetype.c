@@ -1,3 +1,5 @@
+
+
 #include "freetype/freetype.h"
 #include "freetype.h"
 
@@ -29,6 +31,7 @@ ftnewface(char *path, int index, FTface *f, FTfaceinfo *finfo)
 	finfo->ascent = (FT_MulFix(ft_face->ascender, ft_face->size->metrics.y_scale)+32)/64;
 	finfo->familyname = ft_face->family_name;
 	finfo->stylename = ft_face->style_name;
+	
 	return nil;
 }
 
@@ -80,6 +83,7 @@ ftloadglyph(FTface f, int ix, FTglyph *g)
 	if (err != nil)
 		return err;
 
+	
 	ft_glyph = ft_face->glyph;
 	g->top = ft_glyph->bitmap_top;
 	g->left = ft_glyph->bitmap_left;

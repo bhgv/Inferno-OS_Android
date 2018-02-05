@@ -1,7 +1,7 @@
 #ifndef __FT_STROKER_H__
 #define __FT_STROKER_H__
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_OUTLINE_H
 
 FT_BEGIN_HEADER

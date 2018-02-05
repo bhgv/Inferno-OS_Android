@@ -19,7 +19,7 @@
 #ifndef __FTBDF_H__
 #define __FTBDF_H__
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_FREETYPE_H
 
 

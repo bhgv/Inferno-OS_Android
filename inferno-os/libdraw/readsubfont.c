@@ -2,6 +2,7 @@
 #include "kernel.h"
 #include "draw.h"
 
+
 Subfont*
 readsubfonti(Display*d, char *name, int fd, Image *ai, int dolock)
 {

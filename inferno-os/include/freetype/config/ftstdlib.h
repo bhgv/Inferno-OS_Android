@@ -57,7 +57,11 @@
   /*                                                                    */
   /**********************************************************************/
 
+#ifndef __WCHAR_TYPE__
 typedef unsigned short wchar_t;
+#else
+typedef __WCHAR_TYPE__ wchar_t;
+#endif
 
 #include <lib9.h>
 #define UINT_MAX	0xffffffffU

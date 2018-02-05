@@ -1,7 +1,7 @@
 #ifndef __FT_OBJECT_H__
 #define __FT_OBJECT_H__
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_FREETYPE_H
 
 FT_BEGIN_HEADER

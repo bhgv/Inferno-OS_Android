@@ -1,10 +1,7 @@
+#ifndef _LIB9_H
+#define _LIB9_H
+
 /* define _BSD_SOURCE to use ISO C, POSIX, and 4.3BSD things. */
-
-//#define __INTRODUCED_IN_ARM(a) (a)
-//#define __INTRODUCED_IN_MIPS(a) 
-//#define __INTRODUCED_IN_X86(a) 
-//#define __INTRODUCED_IN(a) 
-
 
 typedef unsigned int size_t;
 //typedef unsigned short wchar_t;
@@ -534,3 +531,5 @@ extern	ulong	getfsr(void);
 #define	FPAUNFL	FPUNFL
 #define	FPAZDIV	FPZDIV
 #define	FPAINVAL	FPINVAL
+
+#endif

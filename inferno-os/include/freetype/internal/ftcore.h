@@ -1,7 +1,7 @@
 #ifndef __FT_CORE_H__
 #define __FT_CORE_H__
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_TYPES_H
 #include FT_SYSTEM_MEMORY_H
 

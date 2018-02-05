@@ -1,7 +1,7 @@
 #ifndef __FT_SYSTEM_MEMORY_H__
 #define __FT_SYSTEM_MEMORY_H__
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 
 FT_BEGIN_HEADER
 

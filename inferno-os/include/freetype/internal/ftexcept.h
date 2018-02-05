@@ -1,7 +1,7 @@
 #ifndef __FT_EXCEPT_H__
 #define __FT_EXCEPT_H__
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_INTERNAL_OBJECTS_H
 
 FT_BEGIN_HEADER

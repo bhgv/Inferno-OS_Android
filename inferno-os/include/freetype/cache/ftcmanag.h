@@ -63,7 +63,7 @@
 #define __FTCMANAG_H__
 
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_CACHE_H
 #include FT_CACHE_INTERNAL_LRU_H
 #include FT_CACHE_INTERNAL_CACHE_H

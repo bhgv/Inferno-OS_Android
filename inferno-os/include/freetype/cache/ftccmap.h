@@ -19,7 +19,7 @@
 #ifndef __FTCCMAP_H__
 #define __FTCCMAP_H__
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_CACHE_H
 
 

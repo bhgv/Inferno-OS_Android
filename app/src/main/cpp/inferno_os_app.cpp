@@ -10,10 +10,10 @@
 
 #include <android/input.h>
 
+//#include "utils.h"
+
+
 #include <android/log.h>
-
-#include "utils.h"
-
 
 
 #define  LOG_TAG    "inferno SO"
@@ -23,6 +23,11 @@
 
 
 const int kFRAME_DISPLAY_TIME = 1;
+
+
+
+void goToFullscreenMode(ANativeActivity* activity);
+
 
 extern "C" {
 	//extern

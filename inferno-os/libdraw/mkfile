@@ -21,6 +21,7 @@ OFILES=	alloc.$O\
 	freesubfont.$O\
 	getdefont.$O\
 	getsubfont.$O\
+	getsubfont_ft.$O\
 	init.$O\
 	line.$O\
 	mkfont.$O\

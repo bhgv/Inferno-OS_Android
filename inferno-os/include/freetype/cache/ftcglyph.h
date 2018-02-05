@@ -46,7 +46,7 @@
 #define __FTCGLYPH_H__
 
 
-#include <ft2build.h>
+#include <freetype/ft2build.h>
 #include FT_CACHE_H
 #include FT_CACHE_MANAGER_H
 

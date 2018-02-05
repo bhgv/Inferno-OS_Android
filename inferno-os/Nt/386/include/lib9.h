@@ -1,3 +1,6 @@
+#ifndef _LIB9_H
+#define _LIB9_H
+
 #define _POSIX_SOURCE
 #include <stdlib.h>
 #include <stdarg.h>
@@ -494,3 +497,5 @@ extern char *argv0;
 
 extern	void	setbinmode(void);
 extern	void*	sbrk(int);
+
+#endif
