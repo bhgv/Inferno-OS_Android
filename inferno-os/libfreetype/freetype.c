@@ -31,6 +31,8 @@ ftnewface(char *path, int index, FTface *f, FTfaceinfo *finfo)
 	finfo->ascent = (FT_MulFix(ft_face->ascender, ft_face->size->metrics.y_scale)+32)/64;
 	finfo->familyname = ft_face->family_name;
 	finfo->stylename = ft_face->style_name;
+
+	finfo->num_glyphs = ft_face->num_glyphs;
 	
 	return nil;
 }

@@ -26,7 +26,7 @@ readsubfont_ft(Display*d, char *name, int fnt_size, int dolock);
  */
 
 Subfont*
-_getsubfont(Display *d, char *name)
+_getsubfont(Display *d, char *name, int font_size)
 {
 	int fd;
 	Subfont *f;
@@ -55,7 +55,7 @@ _getsubfont(Display *d, char *name)
 			if(d->local == 0)
 				unlockdisplay(d);
 LOGI("pre rsf_ft (%s)", name);
-			f = readsubfont_ft(d, name, 16, d->local == 0);
+			f = readsubfont_ft(d, name, font_size, d->local == 0);
 //LOGI("post rsf_ft (%x)", f);
 			if(d->local == 0)
 				lockdisplay(d);

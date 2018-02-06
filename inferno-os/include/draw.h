@@ -489,7 +489,7 @@ extern int	runestringnwidth(Font*, Rune*, int);
 extern Point	strsubfontwidth(Subfont*, char*);
 extern int	loadchar(Font*, Rune, Cacheinfo*, int, int, char**);
 extern char*	subfontname(char*, char*, int);
-extern Subfont*	_getsubfont(Display*, char*);
+extern Subfont*	_getsubfont(Display*, char*, int);
 extern Subfont*	getdefont(Display*);
 extern int		lockdisplay(Display*);
 extern void	unlockdisplay(Display*);

@@ -43,7 +43,7 @@ _stringnwidth(Font *f, char *s, Rune *r, int len)
 				return twid;
 			}
 			if(subfontname){
-				if(_getsubfont(f->display, subfontname) == 0){
+				if(_getsubfont(f->display, subfontname, f->height) == 0){
 					def = f->display->defaultfont;
 					if(def && f!=def)
 						f = def;

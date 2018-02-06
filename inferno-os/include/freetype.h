@@ -12,6 +12,8 @@ struct FTfaceinfo {
 	int	ascent;
 	char*	familyname;
 	char*	stylename;
+
+	long num_glyphs;
 };
 
 typedef struct FTface FTface;

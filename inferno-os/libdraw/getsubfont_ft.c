@@ -23,9 +23,6 @@
 
 
 
-#define FNT_CHR_BEG 0
-#define FNT_CHR_END 255
-
 Subfont*
 readsubfont_ft(Display*d, char *name, int fnt_size, int dolock)
 {
@@ -53,6 +50,10 @@ readsubfont_ft(Display*d, char *name, int fnt_size, int dolock)
 		kwerrstr(err);
 		return nil;
 	}
+#define FNT_CHR_BEG 0
+#define FNT_CHR_END finfo.num_glyphs  //255
+	
+LOGI("font=%s, fnt_sz=%d, num_glyphs=%d", name, fnt_size, FNT_CHR_END);
 
 	err = ftsetcharsize(ftface, fnt_size<<6, 92, 92, &finfo);
 	if (err != nil) {
