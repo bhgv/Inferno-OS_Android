@@ -87,6 +87,7 @@ port
 #	main
 
 code
+	int dontcompile = 1;
 
 init
 	emuinit
