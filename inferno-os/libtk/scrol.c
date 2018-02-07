@@ -6,10 +6,17 @@
 
 /* Layout constants */
 enum {
+#ifdef ANDROID
+	Triangle	= 35,	/* Height of scroll bar triangle */
+	Elembw	= 1,		/* border around elements (triangles etc.) */
+	Scrollbw	= 1,		/* bevel border on scrollbar */
+	Tribw=	1,	/* shadow border on triangle */
+#else
 	Triangle	= 10,	/* Height of scroll bar triangle */
 	Elembw	= 1,		/* border around elements (triangles etc.) */
 	Scrollbw	= 1,		/* bevel border on scrollbar */
 	Tribw=	1,	/* shadow border on triangle */
+#endif
 };
 
 typedef struct TkScroll TkScroll;

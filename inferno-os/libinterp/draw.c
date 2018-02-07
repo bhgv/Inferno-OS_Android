@@ -27,14 +27,18 @@
 #include "png/lodepng.h"
 
 
-	
+#ifdef ANDROID
 #include <android/log.h>
 	
 #define  LOG_TAG    "Inferno DRAW"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-
+#else
+#define  LOGI(...)  print(__VA_ARGS__)
+#define  LOGW(...)  print(__VA_ARGS__)
+#define  LOGE(...)  print(__VA_ARGS__)
+#endif
 
 
 
@@ -1310,18 +1314,42 @@ display_open(Display *disp, char *name)
 		NSVGrasterizer *rast = nil;
 	
 		float scale = 1.0;
+
+		int dst_size = -1;
+		
+LOGI("rd img 1 %s ", name);
+		if(name[0] == ':'){
+			name++;
+			dst_size = atoi(name);
+LOGI("rd img 2 %d ", dst_size);
+			for( ; *name != ':' && *name != '\0'; name++)
+				;
+			if(*name == ':') 
+				name++;
+		}
+LOGI("rd img 3 %s ", name);
+		if(name == nil || name[0] == '\0')
+			return nil;
 			
 		locked = 0;
 	
 		snprint(filename, 127, "%s/%s", rootdir, name);
 //LOGI("SVG showing %s\n", filename);
-		svg = nsvgParseFromFile(filename, "px", 96.0f);
+		svg = nsvgParseFromFile(filename, "px", 72.0f);
 		if(svg == nil){
 			return nil;
 		}
-		
-		w = (int)(scale * svg->width);
-		h = (int)(scale * svg->height);
+
+		if(dst_size > 0){
+			if(svg->width > svg->height)
+				scale = ((float)dst_size) / ((float)svg->width);
+			else
+				scale = ((float)dst_size) / ((float)svg->height);
+		}
+
+		w = (int)(scale * (float)svg->width);
+		h = (int)(scale * (float)svg->height);
+LOGI("rd img 4 %f, %dx%d ", scale, w, h);
 		
 		rast = nsvgCreateRasterizer();
 		if (rast == nil) {

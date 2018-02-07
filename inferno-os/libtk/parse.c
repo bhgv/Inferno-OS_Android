@@ -732,13 +732,40 @@ pbmap(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 
 	if(buf[0] == '@')
 		i = display_open(d, buf+1);
- else if(buf[0] == '<') {
+	 else if(buf[0] == '<') {
 		buf++;
 		fd = strtoul(buf, &c, 0);
 		if(c == buf) {
 			return TkBadvl;
 		}
 		i = readimage(d, fd, 1);
+	}
+	else if(buf[0] == ':') {
+		char *file, *size;
+		int e;
+
+		i = nil;
+		
+		for(e = 1; buf[e] != ':' && buf[e] != '\0'; e++);
+
+		if(buf[e] != '\0'){
+			e++;
+			
+			size = mallocz(20, 0);
+			if(size == nil)
+				return TkNomem;
+			memcpy(size, buf, e);
+			size[e] = '\0';
+
+			file = mallocz(Tkmaxitem, 0);
+			if(file == nil)
+				return TkNomem;
+
+			snprint(file, Tkmaxitem, "%s/icons/tk/%s", size, &buf[e]);
+			i = display_open(d, file);
+			free(file);
+			free(size);
+		}
 	}
 	else {
 		char *file;

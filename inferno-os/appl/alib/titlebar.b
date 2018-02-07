@@ -11,7 +11,8 @@ include "titlebar.m";
 title_cfg := array[] of {
 	"frame .Wm_t -bg #aaaaaa -borderwidth 1",
 	"label .Wm_t.title -height 40 -anchor w -bg #aaaaaa -fg white",
-	"button .Wm_t.e -bitmap closebig.bit -command {send wm_title exit} -takefocus 0",
+#	"button .Wm_t.e -bitmap closebig.bit -command {send wm_title exit} -takefocus 0",
+	"button .Wm_t.e -bg #aa2200 -bitmap :38:window-close.svg -command {send wm_title exit} -takefocus 0",
 	"pack .Wm_t.e -side right",
 	"bind .Wm_t <Button-1> {send wm_title move %X %Y}",
 	"bind .Wm_t <Double-Button-1> {send wm_title lower .}",
@@ -21,8 +22,8 @@ title_cfg := array[] of {
 	"bind .Wm_t.title <Double-Button-1> {send wm_title lower .}",
 	"bind .Wm_t.title <Motion-Button-1> {}",
 	"bind .Wm_t.title <Motion> {}",
-	"bind . <FocusIn> {.Wm_t configure -bg blue;"+
-		".Wm_t.title configure -bg blue;update}",
+	"bind . <FocusIn> {.Wm_t configure -bg #666699;"+
+		".Wm_t.title configure -bg #666699;update}",
 	"bind . <FocusOut> {.Wm_t configure -bg #aaaaaa;"+
 		".Wm_t.title configure -bg #aaaaaa;update}",
 };
@@ -45,21 +46,29 @@ new(top: ref Tk->Toplevel, buts: int): chan of string
 	for(i := 0; i < len title_cfg; i++)
 		cmd(top, title_cfg[i]);
 
-	if(buts & OK)
-		cmd(top, "button .Wm_t.ok -bitmap okbig.bit"+
+	if(buts & OK){
+		cmd(top, "button .Wm_t.ok -bg #ffee00 -bitmap :38:dialog-ok-apply.svg"+   #okbig.bit"+
 			" -command {send wm_title ok} -takefocus 0; pack .Wm_t.ok -side left");
+		cmd(top, "frame .Wm_t.okf -width 4 -takefocus 0; pack .Wm_t.okf -side left");
+	}
 
-	if(buts & Hide)
-		cmd(top, "button .Wm_t.top -bitmap minimisebig.bit"+
+	if(buts & Hide){
+		cmd(top, "button .Wm_t.top -bg #ffee00 -bitmap :38:window-minimize.svg"+   #-bitmap minimisebig.bit"+
 			" -command {send wm_title task} -takefocus 0; pack .Wm_t.top -side left");
+		cmd(top, "frame .Wm_t.topf -width 4 -takefocus 0; pack .Wm_t.topf -side left");
+	}
 
-	if(buts & Resize)
-		cmd(top, "button .Wm_t.m -bitmap maximisebig.bit"+
+	if(buts & Resize){
+		cmd(top, "button .Wm_t.m -bg #ffee00 -bitmap :38:window-maximize.svg"+   #-bitmap maximisebig.bit"+
 			" -command {send wm_title size} -takefocus 0; pack .Wm_t.m -side left");
+		cmd(top, "frame .Wm_t.mf -width 4 -takefocus 0; pack .Wm_t.mf -side left");
+	}
 
-	if(buts & Help)
+	if(buts & Help){
 		cmd(top, "button .Wm_t.h -bitmap helpbig.bit"+
 			" -command {send wm_title help} -takefocus 0; pack .Wm_t.h -side left");
+		cmd(top, "frame .Wm_t.hf -width 4 -takefocus 0; pack .Wm_t.hf -side left");
+	}
 
 	# pack the title last so it gets clipped first
 	cmd(top, "pack .Wm_t.title -side left");

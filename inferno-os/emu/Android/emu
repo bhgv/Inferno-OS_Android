@@ -22,6 +22,8 @@ dev
 
 	snarf
 
+#	audio-andr	audio-oss
+
 #	ip	ipif6-posix ipaux
 #	eia
 #	audio	audio-oss
