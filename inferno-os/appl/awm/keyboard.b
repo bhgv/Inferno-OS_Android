@@ -33,14 +33,13 @@ Keybd: module
 	init:	fn(nil: ref Draw->Context, nil: list of string);
 };
 
-#FONT: con "/fonts/lucidasans/news.10.font";
 FONT: con "/fonts/vera/vera/vera.20.font";
 SPECFONT: con "/fonts/lucidasans/unicode.8.font";
 
 # size in pixels
 #KEYSIZE: con 16;
-KEYSIZE: con 41; #13;
-KEYSPACE: con 7; #2;
+KEYSIZE: con 13;
+KEYSPACE: con 2;
 KEYBORDER: con 1;
 KEYGAP: con KEYSPACE - (2 * KEYBORDER);
 #ENDGAP: con 2 - KEYBORDER;
@@ -65,10 +64,10 @@ Backslash =>		Key("\\\\", '\\', KEYSIZE, nil, 0),
 CapsLock =>		Key("Caps", Keyboard->Caps, 40, nil, 0),
 Return =>			Key("Enter", '\n', 36, nil, 0),
 Shift =>			Key("Shift", Keyboard->LShift, 45, nil, 0),
-Esc =>			Key("Esc", 8r33, 40, nil, 0),  #21
+Esc =>			Key("Esc", 8r33, 21, nil, 0),
 Ctrl =>			Key("Ctrl", Keyboard->LCtrl, 36, nil, 0),
 Alt =>			Key("Alt", Keyboard->LAlt, 22, nil, 0),
-Space =>			Key(" ", ' ', 400, nil, 0), #140
+Space =>			Key(" ", ' ', 140, nil, 0),
 Space+1 =>		Key("Return", '\n', 36, nil, 0),
 };
 
@@ -123,6 +122,8 @@ init(ctxt: ref Draw->Context, args: list of string)
 		}
 	}
 
+#	winopts = Tkclient->Appl;
+
 	sys->pctl(Sys->NEWPGRP, nil);
 	tkclient->init();
 
@@ -137,10 +138,26 @@ init(ctxt: ref Draw->Context, args: list of string)
 	(t, wcmd) := tkclient->toplevel(ctxt, "", "Kbd", winopts);
 	cmd(t, ". configure -bd 0 -relief flat");
 
+	r := t.screenr;
+
+#	sys->print("scrn WxH = %dx%d bsz=%d - %d\n", r.dx(), r.dy(), r.dx()/15, KEYBORDER);
+	wkbd := r.dx();
+	if(wkbd > r.dy())
+		wkbd = int wkbd/2;
+
+	KEYGAP_ := int wkbd/100;
+	KEYSIZE_ := int wkbd/15 - KEYGAP_;
+
+	specials[ Backslash ].size = KEYSIZE_;
+	specials[ Esc       ].size = KEYSIZE_;
+	specials[ Space     ].size = (KEYSIZE_ + KEYGAP_) * 9;
+
+	KEYGAP_ -= (2 * KEYBORDER);
+
 	for(i := 0; i < len keys[0]; i++)
 		if(keys[0][i] != nil)
 			cmd(t, sys->sprint("button .b%d -takefocus 0 -font %s -width %d -height %d -bd %d -activebackground %s -text {%s} -command 'send keypress %d",
-				i, FONT, KEYSIZE, KEYSIZE, KEYBORDER, background, keys[0][i], keyvals[0][i]));
+				i, FONT, KEYSIZE_, KEYSIZE_, KEYBORDER, background, keys[0][i], keyvals[0][i]));
 
 	for(i = 0; i < len specials; i++) {
 		k := specials[i];
@@ -153,7 +170,7 @@ init(ctxt: ref Draw->Context, args: list of string)
 	for(j:=0; i < len keys[0]; j++){
 		rowf := sys->sprint(".f%d", j);
 		cmd(t, "frame "+rowf);
-		cmd(t, sys->sprint("frame .pad%d -height %d", j, KEYGAP));
+		cmd(t, sys->sprint("frame .pad%d -height %d", j, KEYGAP_));
 		if(ENDGAP){
 			cmd(t, rowf + ".pad -width " + string ENDGAP);
 			cmd(t, "pack " + rowf + ".pad -side left");
@@ -162,9 +179,9 @@ init(ctxt: ref Draw->Context, args: list of string)
 			label := keys[0][i];
 			expand := label != "\\\\" && len label > 1;
 			cmd(t, "pack .b" + string i + " -in "+ rowf + " -side left -fill x -expand "+string expand);
-			if(keys[0][i+1] != nil && KEYGAP > 0){
+			if(keys[0][i+1] != nil && KEYGAP_ > 0){
 				padf := sys->sprint("%s.pad%d", rowf, i);
-				cmd(t, "frame " + padf + " -width " + string KEYGAP);
+				cmd(t, "frame " + padf + " -width " + string KEYGAP_);
 				cmd(t, "pack " + padf + " -side left");
 			}
 		}
@@ -182,7 +199,10 @@ init(ctxt: ref Draw->Context, args: list of string)
 		cmd(t, sys->sprint("pack .f%d .pad%d -fill x -in .", j, j));
 
 	(w, h) := (int cmd(t, ". cget -width"), int cmd(t, ". cget -height"));
-	r := t.screenr;
+#	r := t.screenr;
+
+#	sys->print("scrn WxH = %dx%d\n", r.dx(), r.dy());
+
 	off := (r.dx()-w)/2;
 	cmd(t, sys->sprint(". configure -x %d -y %d", r.min.x+off, r.max.y-h));
 	tkclient->onscreen(t, nil);
@@ -289,6 +309,10 @@ handle_keyclicks(t: ref Tk->Toplevel, wcmd: chan of string, taskbar: int)
 		if (s == "exit" && noexit)
 			s = "task";
 		tkclient->wmctl(t, s);
+
+#		if (s == "size"){
+#			sys->print("size!");
+#		}
 	}
 }
 

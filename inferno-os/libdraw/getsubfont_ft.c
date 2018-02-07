@@ -55,7 +55,7 @@ readsubfont_ft(Display*d, char *name, int fnt_size, int dolock)
 	
 LOGI("font=%s, fnt_sz=%d, num_glyphs=%d", name, fnt_size, FNT_CHR_END);
 
-	err = ftsetcharsize(ftface, fnt_size<<6, 92, 92, &finfo);
+	err = ftsetcharsize(ftface, fnt_size<<6, 72, 72, &finfo);
 	if (err != nil) {
 		kwerrstr(err);
 		return nil;
