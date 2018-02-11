@@ -90,25 +90,31 @@ LOGI("font=%s, fnt_sz=%d, num_glyphs=%d", name, fnt_size, FNT_CHR_END);
 		fc[j].x = sf_x;
 		fc[j].top = 0; //ftg->top; //
 		fc[j].bottom = cmh; //ftg->height; //
-		fc[j].left = 0; //ftg->left;
-		fc[j].width = ftg->width; //ftg->bpr + 1; //(ftg->advx + 32) >> 6; //
+		fc[j].left = ftg->left;  // 0; //
+		fc[j].width = (ftg->advx + 32) >> 6; //ftg->width; //ftg->bpr + 1; //(ftg->advx + 32) >> 6; //
 
 		aftg[j] = ftg;
 		
-		sf_x += ftg->bpr + 1; //(ftg->advx + 32) >> 6; //ftg->width; //
+		sf_x += (ftg->advx + 32) >> 6; //ftg->bpr + 1; //(ftg->advx + 32) >> 6; //ftg->width; //
 
 		s1bpr = ftg->width;
 		s2bpr = ftg->bpr;
 
 		r.min.x = 0; r.min.y = 0;
-		r.max.x = s2bpr; r.max.y = ftg->height;
-
-		if(c == ' '){
-			memset(ftg->bitmap, 0xff, s2bpr*ftg->height);
-		}
+		r.max.x = s2bpr ? s2bpr : (ftg->advx + 32) >> 6; //s2bpr; 
+		r.max.y = ftg->height ? ftg->height : cmh;
 
 		aci[j] = allocimage(d, r, GREY8, 0, DBlack); // DTransparent);
-		loadimage(aci[j], r, ftg->bitmap, s2bpr*ftg->height);
+
+		if(ftg->bitmap){
+			loadimage(aci[j], r, ftg->bitmap, s2bpr*ftg->height);
+		}else{
+			char *buf = malloc(r.max.x*r.max.y); //(s2bpr*ftg->height);
+			memset(buf, 0xff, r.max.x*r.max.y); //s2bpr*ftg->height);
+			loadimage(aci[j], r, buf, r.max.x*r.max.y); //s2bpr*ftg->height);
+			free(buf);
+		}
+
 
 	//	if(cmh < ftg->height) 
 	//		cmh = ftg->height;
