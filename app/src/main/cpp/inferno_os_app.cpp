@@ -17,13 +17,18 @@
 
 
 #define  LOG_TAG    "inferno SO"
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  //__android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  //__android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  //__android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+
+
+#define MBUTS_ACCORD_OTHER_KEY_BORDER  1000000000
+
+typedef unsigned long long uint64;
+typedef unsigned int uint32;
 
 
 const int kFRAME_DISPLAY_TIME = 1;
-
 
 
 void goToFullscreenMode(ANativeActivity* activity);
@@ -41,6 +46,7 @@ extern "C" {
 	extern void xmouse_btn(int x, int y, int btn);
 	extern void xexpose();
 }
+
 
 extern "C" {
 
@@ -106,40 +112,81 @@ class Engine {
     struct timespec smallFrameStartTime_;
 };
 
+
 static int32_t ProcessAndroidInput(struct android_app *app, AInputEvent *event) {
 	static int mbtns = 0;
+	static int x, y;
+	static int id;
+	static uint64 first_tap_time = 0;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
 	switch(AInputEvent_getType(event)){
 		case AINPUT_EVENT_TYPE_MOTION:
 			{
-				int32_t action = AKeyEvent_getAction(event);
-				if (action == AKEY_EVENT_ACTION_DOWN) {
-                    int x = AMotionEvent_getX(event, 0);
-                    int y = AMotionEvent_getY(event, 0);
-LOGI("touch X=%d, Y=%d", x, y);
-                    xmouse_btn(x, y, 1);
-					mbtns = 1;
-                    //return 1;
-                }else if (action == AKEY_EVENT_ACTION_UP) {
-					int x = AMotionEvent_getX(event, 0);
-					int y = AMotionEvent_getY(event, 0);
-LOGI("un touch X=%d, Y=%d", x, y );
-					xmouse_btn(x, y, 0);
-					mbtns = 0;
-					//return 1;
-				}else{
-					action = AMotionEvent_getAction( event );
-					if( action == AMOTION_EVENT_ACTION_MOVE )
-					{
-						int x = AMotionEvent_getX( event, 0 );
-						int y = AMotionEvent_getY( event, 0 );
-LOGI("mmove X=%d, Y=%d", x, y );
-						xmouse_btn(x, y, mbtns);
-					}
-				}
+				int32_t action = AMotionEvent_getAction( event ) & AMOTION_EVENT_ACTION_MASK;
+				switch(action){
+					case AMOTION_EVENT_ACTION_MOVE:
+						{
+							x = AMotionEvent_getX( event, 0 );
+							y = AMotionEvent_getY( event, 0 );
+LOGI("m move X=%d, Y=%d, mbtns=%d", x, y, mbtns );
+							xmouse_btn(x, y, mbtns);
+						}
+						break;
+
+					case AMOTION_EVENT_ACTION_DOWN:
+						{
+							uint64 tap_time = AMotionEvent_getEventTime(event);
+
+							mbtns = AMotionEvent_getPointerCount(event);
+							if(mbtns == 1){
+								id = AMotionEvent_getPointerId(event, 0);
+								first_tap_time = tap_time;
+								x = AMotionEvent_getX(event, 0);
+								y = AMotionEvent_getY(event, 0);
+							}else //if(tap_time - first_tap_time > MBUTS_ACCORD_OTHER_KEY_BORDER)
+							{
+								xmouse_btn(x, y, 0);
+							}
+LOGI("m touch X=%d, Y=%d, mbtns=%d, t=%d:%d", x, y, mbtns, (uint32)(tap_time>>32), (uint32)tap_time);
+							xmouse_btn(x, y, mbtns);
+							//return 1;
+						}
+						break;
+						
+					case AMOTION_EVENT_ACTION_POINTER_DOWN:
+						{
+							uint64 tap_time = AMotionEvent_getEventTime(event);
+							if(tap_time - first_tap_time > MBUTS_ACCORD_OTHER_KEY_BORDER){
+								xmouse_btn(x, y, 0);
+							}
+							//x = AMotionEvent_getX(event, 0);
+							//y = AMotionEvent_getY(event, 0);
+//								xmouse_btn(x, y, 0);
+							
+							mbtns = AMotionEvent_getPointerCount(event);
+LOGI("m multi( %d )touch X=%d, Y=%d, dt=%d", mbtns, x, y, tap_time - first_tap_time);
+							xmouse_btn(x, y, 0);
+							xmouse_btn(x, y, mbtns);
+						}
+						break;
+
+					case AMOTION_EVENT_ACTION_UP:
+						{
+							if( id == AMotionEvent_getPointerId(event, 0) ){
+								x = AMotionEvent_getX(event, 0);
+								y = AMotionEvent_getY(event, 0);
+LOGI("m un touch X=%d, Y=%d, mbtns=%d", x, y, mbtns );
+								xmouse_btn(x, y, 0);
+								mbtns = 0;
+							}
+						}
+						break;
+
+				};
         		engine->StartAnimation(true);
         		return 1;
     		}
+
 		case AINPUT_EVENT_TYPE_KEY:
 			{
 LOGI("Key event: action=%d keyCode=%d metaState=0x%x",
@@ -169,6 +216,7 @@ void lodepng_free(unsigned char* buffer){ free_((void*)buffer); }
 
 
 AAssetManager* assetManager = NULL;
+
 
 void ioa_showsplash(){
 	if(assetManager == NULL || xscreendata == NULL) return;
@@ -239,7 +287,6 @@ void ioa_showsplash(){
 } // extern "C"
 
 
-
 static void ProcessAndroidCmd(struct android_app *app, int32_t cmd) {
     static int32_t format = WINDOW_FORMAT_RGB_565;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
@@ -305,6 +352,7 @@ LOGI("terminate app\n");
     }
 }
 
+
 // Android application glue entry function for us
 extern "C" void android_main(struct android_app* state) {
 
@@ -347,6 +395,7 @@ extern "C" void android_main(struct android_app* state) {
     }
 }
 
+
 // Engine class implementations
 bool Engine::PrepareDrawing(void) {
     ANativeWindow_Buffer buf;
@@ -360,7 +409,6 @@ bool Engine::PrepareDrawing(void) {
 
     return true;
 }
-
 
 
 bool Engine::UpdateDisplay(void) {

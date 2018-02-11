@@ -132,7 +132,7 @@ static int		xscreendepth;
 //static int              is_shm;
 
 static int putsnarf, assertsnarf;
-char *gkscanid = "emu_x11";
+//char *gkscanid = "emu_x11";
 
 
 extern int Xsize;
@@ -1414,15 +1414,15 @@ xmouse() //XEvent *e)
 //	XMotionEvent *me;
 //	XEvent motion;
 	int x=0, y=0, b=0;
-	static ulong lastb, lastt;
+//	static ulong lastb, lastt;
 
-	if(putsnarf != assertsnarf){
-		assertsnarf = putsnarf;
+//	if(putsnarf != assertsnarf){
+//		assertsnarf = putsnarf;
 //		XSetSelectionOwner(xmcon, XA_PRIMARY, xdrawable, CurrentTime);
 //		if(clipboard != None)
 //			XSetSelectionOwner(xmcon, clipboard, xdrawable, CurrentTime);
 //		XFlush(xmcon);
-	}
+//	}
 
 #if 0
 	dbl = 0;
@@ -1716,6 +1716,9 @@ if(0) iprint("xselect target=%d requestor=%d property=%d selection=%d\n",
 }
 #endif
 
+
+char *snarf_buf = nil;
+
 char*
 clipread(void)
 {
@@ -1726,18 +1729,35 @@ clipread(void)
 //	XLockDisplay(xsnarfcon);
 //	p = _xgetsnarf(xsnarfcon);
 //	XUnlockDisplay(xsnarfcon);
+
+	p = strdup(snarf_buf);
+
 	return p;
 }
 
 int
 clipwrite(char *buf)
 {
-	buf = NULL;
+//	buf = NULL;
 
 //	if(xsnarfcon == nil)
 //		return 0;
 //	XLockDisplay(xsnarfcon);
 //	_xputsnarf(xsnarfcon, buf);
 //	XUnlockDisplay(xsnarfcon);
+	int l = strlen(buf);
+
+	if(snarf_buf)
+		free(snarf_buf);
+	snarf_buf = nil;
+	
+	if(l >= SnarfSize)
+		return 0;
+	
+	snarf_buf = strdup(buf);
+	
+	/* leave note for mouse proc to assert selection ownership */
+	putsnarf++;
+
 	return 0;
 }

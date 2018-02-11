@@ -95,12 +95,23 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fPIC -fPIE")
 set(CMAKE_SHARED_LINKER_FLAGS
     "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate -fPIC -fPIE")
 
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall")
+add_library(native-audio STATIC native-audio.c)
+
 add_library(inferno_os_app SHARED
-    inferno_os_app.cpp)
+    inferno_os_app.cpp
+)
 
 
 # add lib dependencies
-target_link_libraries(inferno_os_app android log m native_app_glue m
+target_link_libraries(inferno_os_app 
+    native-audio 
+    android 
+    log 
+    OpenSLES 
+    m native_app_glue m
+    
     emu
     libinterp
     liblodepng
@@ -117,6 +128,8 @@ target_link_libraries(inferno_os_app android log m native_app_glue m
     libmp
     lib9
     emu
+
+    native-audio 
     )
 #    -Wl,--start-group
 #     -Wl,--end-group

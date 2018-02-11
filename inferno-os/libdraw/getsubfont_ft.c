@@ -91,7 +91,7 @@ LOGI("font=%s, fnt_sz=%d, num_glyphs=%d", name, fnt_size, FNT_CHR_END);
 		fc[j].top = 0; //ftg->top; //
 		fc[j].bottom = cmh; //ftg->height; //
 		fc[j].left = 0; //ftg->left;
-		fc[j].width = ftg->bpr + 1; //(ftg->advx + 32) >> 6; //ftg->width; //
+		fc[j].width = ftg->width; //ftg->bpr + 1; //(ftg->advx + 32) >> 6; //
 
 		aftg[j] = ftg;
 		
@@ -103,7 +103,11 @@ LOGI("font=%s, fnt_sz=%d, num_glyphs=%d", name, fnt_size, FNT_CHR_END);
 		r.min.x = 0; r.min.y = 0;
 		r.max.x = s2bpr; r.max.y = ftg->height;
 
-		aci[j] = allocimage(d, r, GREY8, 0, DTransparent);
+		if(c == ' '){
+			memset(ftg->bitmap, 0xff, s2bpr*ftg->height);
+		}
+
+		aci[j] = allocimage(d, r, GREY8, 0, DBlack); // DTransparent);
 		loadimage(aci[j], r, ftg->bitmap, s2bpr*ftg->height);
 
 	//	if(cmh < ftg->height) 
@@ -117,7 +121,7 @@ LOGI("font=%s, fnt_sz=%d, num_glyphs=%d", name, fnt_size, FNT_CHR_END);
 	r.max.x += cmw;
 	r.max.y += cmh;
 
-	i = allocimage(d, r, GREY8, 0, DTransparent);
+	i = allocimage(d, r, GREY8, 0, DBlack); //DTransparent);
 
 	sf_x = 0;
 	for(c = FNT_CHR_BEG; c < FNT_CHR_END; c++){

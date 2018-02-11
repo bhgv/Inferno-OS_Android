@@ -1246,7 +1246,26 @@ display_open(Display *disp, char *name)
 		int locked;
 		int nbytes = 0;
 
+		float scale = 1.0;
+		
+		int dst_size = -1;
+		
+LOGI("rd png 1 %s ", name);
+		if(name[0] == ':'){
+			name++;
+			dst_size = atoi(name);
+LOGI("rd png 2 %d ", dst_size);
+			for( ; *name != ':' && *name != '\0'; name++)
+				;
+			if(*name == ':') 
+				name++;
+		}
+LOGI("rd png 3 %s ", name);
+		if(name == nil || name[0] == '\0')
+			return nil;
 
+		locked = 1;
+			
 		snprint(filename, 127, "%s/%s", rootdir, name);
 //LOGI("PNG 0: showing %s\n", filename);
 		/*load the PNG in one function call*/
@@ -1257,6 +1276,44 @@ display_open(Display *disp, char *name)
 		if(error || image == nil){
 			LOGE("PNG decoder error %u: %s\n", error, lodepng_error_text(error));
 			return nil;
+		}
+
+		if(dst_size > 0 && w != 0 && h != 0){
+			char *ti = NULL;
+			int nw, nh, z, q;
+
+			if(w > h)
+				scale = (float)dst_size/(float)w;
+			else
+				scale = (float)dst_size/(float)h;
+
+			nw = (int)(scale * (float)w);
+			nh = (int)(scale * (float)h);
+
+			ti = malloc(nw * nh * 4);
+
+			for(z = 0; z < nh; z++){
+				for(q = 0; q < nw; q++){
+					float xpos = (float)q / scale;
+					float ypos = (float)z / scale;
+				
+					int x = (int)xpos;
+					int y = (int)ypos;
+					
+					//if(x >= w) x = w-1;
+					//if(y >= h) y = h-1;
+				
+					ti[z*nw*4 + 4*q] = image[y*w*4 + 4*x];
+					ti[z*nw*4 + 4*q+1] = image[y*w*4 + 4*x+1];
+					ti[z*nw*4 + 4*q+2] = image[y*w*4 + 4*x+2];
+					ti[z*nw*4 + 4*q+3] = image[y*w*4 + 4*x+3];
+				}
+			}
+			free(image);
+			image = ti;
+
+			w = nw;
+			h = nh;
 		}
 
 		r.min.x = 0;

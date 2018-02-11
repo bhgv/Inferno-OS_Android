@@ -40,6 +40,8 @@ defaultscript :=
 tbtop: ref Tk->Toplevel;
 screenr: Rect;
 
+h_tb: int;
+
 badmodule(p: string)
 {
 	sys->fprint(stderr(), "toolbar: cannot load %s: %r\n", p);
@@ -260,7 +262,9 @@ deiconify(id: string)
 layout(top: ref Tk->Toplevel)
 {
 	r := top.screenr;
-	h := 60; #32;
+	h_tb = int (r.dy()/20);
+
+	h := h_tb; #60; #32;
 	if(r.dy() < 480)
 		h = tk->rect(top, ".b", Tk->Border|Tk->Required).dy();
 	cmd(top, ". configure -x " + string r.min.x +
@@ -284,7 +288,9 @@ toolbar(ctxt: ref Draw->Context, startmenu: int,
 	tk->namechan(tbtop, task, "task");
 	cmd(tbtop, "frame .toolbar");
 	if (startmenu) {
-		cmd(tbtop, "menubutton .toolbar.start -menu .m -borderwidth 0 -bitmap vitabig.png");
+		cmd(tbtop, "menubutton .toolbar.start -menu .m -borderwidth 0 -bitmap :" 
+					+ string h_tb 
+					+ ":vitabig.png");
 		cmd(tbtop, "pack .toolbar.start -side left");
 	}
 
@@ -390,12 +396,14 @@ builtin_menu(nil: ref Context, nil: Sh, argv: list of ref Listnode): string
 	primary := (hd tl argv).word;
 	argv = tl tl argv;
 
+	h_mnu_itm := string int (screenr.dy() / 30);
+
 	if (n == 3) {
 		w := word(hd argv);
 		if (len w == 0)
 			cmd(tbtop, ".m insert 0 separator");
 		else
-			cmd(tbtop, ".m insert 0 command -height 40 -label " + tk->quote(primary) +
+			cmd(tbtop, ".m insert 0 command -height " + h_mnu_itm + " -label " + tk->quote(primary) +
 				" -command {send exec " + w + "}");
 	} else {
 		secondary := (hd argv).word;
@@ -405,13 +413,13 @@ builtin_menu(nil: ref Context, nil: Sh, argv: list of ref Listnode): string
 		e := tk->cmd(tbtop, mpath+" cget -width");
 		if(e[0] == '!') {
 			cmd(tbtop, "menu "+mpath);
-			cmd(tbtop, ".m insert 0 cascade -height 40 -label "+tk->quote(primary)+" -menu "+mpath);
+			cmd(tbtop, ".m insert 0 cascade -height " + h_mnu_itm + " -label "+tk->quote(primary)+" -menu "+mpath);
 		}
 		w := word(hd argv);
 		if (len w == 0)
 			cmd(tbtop, mpath + " insert 0 separator");
 		else
-			cmd(tbtop, mpath+" insert 0 command -height 40 -label "+tk->quote(secondary)+
+			cmd(tbtop, mpath+" insert 0 command -height " + h_mnu_itm + " -label "+tk->quote(secondary)+
 				" -command {send exec "+w+"}");
 	}
 	return nil;

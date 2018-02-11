@@ -298,6 +298,7 @@ amain()
 		envc = tokenize(opt, &enva[1], sizeof(enva)-1) + 1;
 		enva[envc] = 0;
 		option(envc, enva, envusage);
+		savestartup(envc, enva);
 	}
 	if(opt)
 		free(opt);
