@@ -22,6 +22,48 @@
 #include "freetype.h"
 
 
+int
+is_subfont_ft(char *name){
+	char c1, c2, c3, c4;
+	int r;
+	int i = strlen(name) - 1;
+	
+	if(i >= 0){
+		c1 = name[i-3];
+		c2 = name[i-2];
+		c3 = name[i-1];
+		c4 = name[i-0];
+	}else
+		return 0;
+
+	r = (
+		c1 == '.' && 
+		(c2 == 't' || c2 == 'T') &&
+		(c3 == 't' || c3 == 'T') &&
+		(c4 == 'f' || c4 == 'F')
+	);
+	
+	return r;
+}
+
+
+char*
+mangle_subfont_ft(char* name, int size){
+	char *mangled_name;
+
+	if(name == nil || size == 0)
+		return nil;
+	
+	mangled_name = malloc(256);
+	
+	if(!mangled_name)
+		return nil;
+
+	snprint(mangled_name, 255, "%s[%d]", name, size);
+
+	return mangled_name;
+}
+
 
 Subfont*
 readsubfont_ft(Display*d, char *name, int fnt_size, int dolock)
@@ -31,7 +73,7 @@ readsubfont_ft(Display*d, char *name, int fnt_size, int dolock)
 
 	Fontchar *fc0, *fc;
 	Subfont *subfont = nil;
-//	int n = FNT_CHR_END-FNT_CHR_BEG;
+
 	int sf_x = 0;
 
 	FTfaceinfo finfo;
@@ -45,7 +87,9 @@ readsubfont_ft(Display*d, char *name, int fnt_size, int dolock)
 	char *path = name;	
 	char *err;
 
-	err = ftnewface(path, /*f->index*/0, &ftface, &finfo);
+	char *sf_name;
+
+	err = ftnewface(path, 0, &ftface, &finfo);
 	if (err != nil) {
 		kwerrstr(err);
 		return nil;
@@ -172,7 +216,17 @@ LOGI("font=%s, fnt_sz=%d, num_glyphs=%d", name, fnt_size, FNT_CHR_END);
 	if(dolock)
 		lockdisplay(d);
 
-	subfont = allocsubfont(name, FNT_CHR_END-FNT_CHR_BEG, cmh, finfo.ascent, fc, i);
+	sf_name = mangle_subfont_ft(name, fnt_size);
+	subfont = allocsubfont(
+				sf_name, 
+				FNT_CHR_END-FNT_CHR_BEG, 
+				cmh, 
+				finfo.ascent, 
+				fc, 
+				i
+	);
+	if(sf_name)
+		free(sf_name);
 
 	if(dolock)
 		unlockdisplay(d);

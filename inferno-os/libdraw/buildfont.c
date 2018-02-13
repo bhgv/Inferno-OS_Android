@@ -98,7 +98,8 @@ buildfont(Display *d, char *buf, char *name)
 		t = s;
 		while(*s && *s!=' ' && *s!='\n' && *s!='\t')
 			s++;
-		*s++ = 0;
+		if(*s != 0)
+			*s++ = 0;
 		c->subfontname = 0;
 		c->name = strdup(t);
 		if(c->name == 0){

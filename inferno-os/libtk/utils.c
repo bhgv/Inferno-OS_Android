@@ -2,6 +2,14 @@
 #include "draw.h"
 #include "tk.h"
 
+
+extern int Xsize, Ysize;
+extern Cache* fcache[];
+
+extern int is_subfont_ft(char *name);
+extern Cache* cacheinstall(Cache **cache, Display *d, char *name, void *ptr, char *type);
+
+
 struct TkCol
 {
 	ulong	rgba1;
@@ -489,7 +497,30 @@ tkdefaultenv(TkTop *t)
 		tkfont = "/fonts/pelm/unicode.8.font";
 
 	d = t->display;
-	env->font = font_open(d, tkfont);
+	
+	if( is_subfont_ft(tkfont) ){
+		int h = Ysize / 40;
+		int accent = h * 5/6;
+		char fstr[256];
+	
+		snprint(fstr, 255, "%d %d\n0x0000 0x1fff %s\n", h, accent, tkfont);
+	
+		locked = lockdisplay(d);
+		env->font = buildfont(d, fstr, tkfont);
+		if(locked)
+			unlockdisplay(d);
+		if(env->font){
+			Cache *c = cacheinstall(fcache, d, tkfont, env->font, "font");
+			if(c)
+				c->ref++;
+		}
+		
+	}
+	
+	if(env->font == nil) {
+		env->font = font_open(d, tkfont);
+	}
+	
 	if(env->font == nil) {
 		static int warn;
 		if(warn == 0) {

@@ -31,38 +31,17 @@ _getsubfont(Display *d, char *name, int font_size)
 	int fd;
 	Subfont *f;
 
+	if( is_subfont_ft(name) )
 	{
-		char c1, c2, c3, c4;
-		
-		int i = strlen(name) - 1;
-//LOGI("font=%s", name);
-		
-		for( ; i >= 0 && name[i] != '.'; i--);
-		if(i >= 0){
-			c1 = name[i];
-			c2 = name[i+1];
-			c3 = name[i+2];
-			c4 = name[i+3];
-		}else{
-			c1 = c2 = c3 = c4 = '\0';
-		}
-//LOGI("suf=%c%c%c%c", c1, c2, c3, c4);
-		if(c1 == '.' && 
-			(c2 == 't' || c2 == 'T') &&
-			(c3 == 't' || c3 == 'T') &&
-			(c4 == 'f' || c4 == 'F')
-		){
-			if(d->local == 0)
-				unlockdisplay(d);
+		if(d->local == 0)
+			unlockdisplay(d);
 LOGI("pre rsf_ft (%s)", name);
-			f = readsubfont_ft(d, name, font_size, d->local == 0);
-//LOGI("post rsf_ft (%x)", f);
-			if(d->local == 0)
-				lockdisplay(d);
-			if(f == 0)
-				_drawprint(2, "getsubfont: can't read %s: %r\n", name);
-			return f;
-		}
+		f = readsubfont_ft(d, name, font_size, d->local == 0);
+		if(d->local == 0)
+			lockdisplay(d);
+		if(f == 0)
+			_drawprint(2, "getsubfont: can't read %s: %r\n", name);
+		return f;
 	}
 
 	fd = libopen(name, OREAD);

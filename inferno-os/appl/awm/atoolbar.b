@@ -3,7 +3,7 @@ include "sys.m";
 	sys: Sys;
 include "draw.m";
 	draw: Draw;
-	Screen, Display, Image, Rect, Point, Wmcontext, Pointer: import draw;
+	Screen, Display, Image, Rect, Point, Wmcontext, Pointer, Font: import draw;
 include "tk.m";
 	tk: Tk;
 include "tkclient.m";
@@ -31,6 +31,13 @@ Toolbar: module
 
 MAXCONSOLELINES:	con 1024;
 
+
+FONT_TTF: con "/fonts/ttf/Vera.ttf";
+
+tb_fnt : ref Font;
+
+tb_h := 0;
+
 # execute this if no menu items have been created
 # by the init script.
 defaultscript :=
@@ -39,8 +46,6 @@ defaultscript :=
 
 tbtop: ref Tk->Toplevel;
 screenr: Rect;
-
-h_tb: int;
 
 badmodule(p: string)
 {
@@ -242,7 +247,7 @@ iconify(id, label: string)
 	cmd(tbtop, "pack " + padf + " -side left -fill y");
 
 	e := tk->cmd(tbtop, "button .toolbar." +id+" -command {send task "+id+"} -takefocus 0");
-	cmd(tbtop, ".toolbar." +id+" configure -text '" + label);
+	cmd(tbtop, ".toolbar." +id+" configure -font " + tb_fnt.name + " -text '" + label);
 	if(e[0] != '!')
 		cmd(tbtop, "pack .toolbar."+id+" -side left -fill y");
 	cmd(tbtop, "update");
@@ -262,9 +267,8 @@ deiconify(id: string)
 layout(top: ref Tk->Toplevel)
 {
 	r := top.screenr;
-	h_tb = int (r.dy()/20);
 
-	h := h_tb; #60; #32;
+	h := tb_h; #60; #32;
 	if(r.dy() < 480)
 		h = tk->rect(top, ".b", Tk->Border|Tk->Required).dy();
 	cmd(top, ". configure -x " + string r.min.x +
@@ -281,6 +285,18 @@ toolbar(ctxt: ref Draw->Context, startmenu: int,
 	(tbtop, nil) = tkclient->toplevel(ctxt, nil, nil, Tkclient->Plain);
 	screenr = tbtop.screenr;
 
+
+	tb_h = screenr.dy() / 20;
+
+	fnt_csz := int ( tb_h / 2);
+	fnt_nm := FONT_TTF + "_" + string fnt_csz;
+	fnt_str := string fnt_csz + " " + string int (fnt_csz * 5/6) + "\n0x0000 0x0fff " + FONT_TTF + "\n";
+	fnt := Font.build(ctxt.display, fnt_nm, fnt_str);
+#	sys->print("'%s':\n%s ==> %x\n", fnt.name, fnt_str, fnt);
+#	fnt_nm = fnt.name;
+	tb_fnt = fnt;
+
+
 	cmd(tbtop, "button .b -text {XXX}");
 	cmd(tbtop, "pack propagate . 0");
 
@@ -289,7 +305,7 @@ toolbar(ctxt: ref Draw->Context, startmenu: int,
 	cmd(tbtop, "frame .toolbar");
 	if (startmenu) {
 		cmd(tbtop, "menubutton .toolbar.start -menu .m -borderwidth 0 -bitmap :" 
-					+ string h_tb 
+					+ string int tb_h 
 					+ ":vitabig.png");
 		cmd(tbtop, "pack .toolbar.start -side left");
 	}
@@ -398,12 +414,14 @@ builtin_menu(nil: ref Context, nil: Sh, argv: list of ref Listnode): string
 
 	h_mnu_itm := string int (screenr.dy() / 30);
 
+	tb_fnt_nm := tb_fnt.name;
+
 	if (n == 3) {
 		w := word(hd argv);
 		if (len w == 0)
 			cmd(tbtop, ".m insert 0 separator");
 		else
-			cmd(tbtop, ".m insert 0 command -height " + h_mnu_itm + " -label " + tk->quote(primary) +
+			cmd(tbtop, ".m insert 0 command -height " + h_mnu_itm + " -font " + tb_fnt_nm + " -label " + tk->quote(primary) +
 				" -command {send exec " + w + "}");
 	} else {
 		secondary := (hd argv).word;
@@ -413,13 +431,13 @@ builtin_menu(nil: ref Context, nil: Sh, argv: list of ref Listnode): string
 		e := tk->cmd(tbtop, mpath+" cget -width");
 		if(e[0] == '!') {
 			cmd(tbtop, "menu "+mpath);
-			cmd(tbtop, ".m insert 0 cascade -height " + h_mnu_itm + " -label "+tk->quote(primary)+" -menu "+mpath);
+			cmd(tbtop, ".m insert 0 cascade -height " + h_mnu_itm + " -font " + tb_fnt_nm + " -label "+tk->quote(primary)+" -menu "+mpath);
 		}
 		w := word(hd argv);
 		if (len w == 0)
 			cmd(tbtop, mpath + " insert 0 separator");
 		else
-			cmd(tbtop, mpath+" insert 0 command -height " + h_mnu_itm + " -label "+tk->quote(secondary)+
+			cmd(tbtop, mpath+" insert 0 command -height " + h_mnu_itm + " -font " + tb_fnt_nm + " -label "+tk->quote(secondary)+
 				" -command {send exec "+w+"}");
 	}
 	return nil;

@@ -151,7 +151,7 @@ cf2subfont(Cachefont *cf, Font *f)
 	char *name;
 	Subfont *sf;
 	int depth;
-
+	
 	name = cf->subfontname;
 	if(name == nil){
 		depth = 0;
@@ -164,7 +164,16 @@ cf2subfont(Cachefont *cf, Font *f)
 			return nil;
 		cf->subfontname = name;
 	}
-	sf = lookupsubfont(f->display, name);
+ 	if( is_subfont_ft(name) ){
+		char *sf_name;
+		
+		sf_name = mangle_subfont_ft(name, f->height);
+		sf = lookupsubfont(f->display, sf_name);
+		if(sf_name)
+			free(sf_name);
+ 	}else
+		sf = lookupsubfont(f->display, name);
+	
 	return sf;
 }
 

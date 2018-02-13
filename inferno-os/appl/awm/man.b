@@ -5,7 +5,7 @@ include "sys.m";
 
 include "draw.m";
 	draw: Draw;
-	Font: import draw;
+	Font, Rect: import draw;
 
 include "tk.m";
 	tk: Tk;
@@ -27,11 +27,18 @@ W: adt {
 	textwidth: fn(nil: self ref W, text: Text): int;
 };
 
-ROMAN: con "/fonts/lucidasans/unicode.7.font";
-BOLD: con "/fonts/lucidasans/typelatin1.7.font";
-ITALIC: con "/fonts/lucidasans/italiclatin1.7.font";
-HEADING1: con "/fonts/lucidasans/boldlatin1.7.font";
-HEADING2: con "/fonts/lucidasans/italiclatin1.7.font";
+#ROMAN: con "/fonts/lucidasans/unicode.7.font";
+#BOLD: con "/fonts/lucidasans/typelatin1.7.font";
+#ITALIC: con "/fonts/lucidasans/italiclatin1.7.font";
+#HEADING1: con "/fonts/lucidasans/boldlatin1.7.font";
+#HEADING2: con "/fonts/lucidasans/italiclatin1.7.font";
+#rfont, bfont, ifont, h1font, h2font: ref Font;
+
+ROMAN: con "/fonts/ttf/noto/NotoSerif-Regular.ttf";
+BOLD: con "/fonts/ttf/noto/NotoSerif-Bold.ttf";
+ITALIC: con "/fonts/ttf/noto/NotoSerif-Italic.ttf";
+HEADING1: con "/fonts/ttf/noto/NotoSans-Bold.ttf";
+HEADING2: con "/fonts/ttf/noto/NotoSans-BoldItalic.ttf";
 rfont, bfont, ifont, h1font, h2font: ref Font;
 
 GOATTR: con Parseman->ATTR_LAST << iota;
@@ -130,20 +137,49 @@ init(ctxt: ref Draw->Context, argv: list of string)
 
 	argv = tl argv;
 
-	rfont = Font.open(ctxt.display, ROMAN);
-	bfont = Font.open(ctxt.display, BOLD);
-	ifont = Font.open(ctxt.display, ITALIC);
-	h1font = Font.open(ctxt.display, HEADING1);
-	h2font = Font.open(ctxt.display, HEADING2);
+
+	tkclient->init();
+	buts := Tkclient->Resize | Tkclient->Hide;
+	winctl: chan of string;
+
+	(window, winctl) = tkclient->toplevel(ctxt, nil, "Man", buts);
+
+	screenr := window.screenr;
+
+	fnt_h := screenr.dy() / 45;
+	fnt_acc := int (fnt_h * 5/6);
+
+	rfont = Font.build(ctxt.display, 
+				ROMAN, 
+				string fnt_h + " " + string fnt_acc + "\n0x0000 0x1fff " + ROMAN + "\n");
+	bfont = Font.build(ctxt.display, 
+				BOLD,  
+				string fnt_h + " " + string fnt_acc + "\n0x0000 0x1fff " + BOLD + "\n");
+	ifont = Font.build(ctxt.display, 
+				ITALIC, 
+				string fnt_h + " " + string fnt_acc + "\n0x0000 0x1fff " + ITALIC + "\n");
+	h1font = Font.build(ctxt.display, 
+				HEADING1, 
+				string fnt_h + " " + string fnt_acc + "\n0x0000 0x1fff " + HEADING1 + "\n");
+	h2font = Font.build(ctxt.display, 
+				HEADING2, 
+				string fnt_h + " " + string fnt_acc + "\n0x0000 0x1fff " + HEADING2 + "\n");
+
+#	rfont = Font.open(ctxt.display, ROMAN);
+#	bfont = Font.open(ctxt.display, BOLD);
+#	ifont = Font.open(ctxt.display, ITALIC);
+#	h1font = Font.open(ctxt.display, HEADING1);
+#	h2font = Font.open(ctxt.display, HEADING2);
 
 	em := rfont.width("m");
 	en := rfont.width("n");
 	metrics = Parseman->Metrics(490, 80, em, en, 14, 40, 20);
 
-	tkclient->init();
-	buts := Tkclient->Resize | Tkclient->Hide;
-	winctl: chan of string;
-	(window, winctl) = tkclient->toplevel(ctxt, nil, "Man", buts);
+#	tkclient->init();
+#	buts := Tkclient->Resize | Tkclient->Hide;
+#	winctl: chan of string;
+#	(window, winctl) = tkclient->toplevel(ctxt, nil, "Man", buts);
+
 	nav := chan of string;
 	plumb := chan of string;
 	tk->namechan(window, nav, "nav");

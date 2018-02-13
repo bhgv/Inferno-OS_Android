@@ -112,7 +112,7 @@ init(ctxt: ref Draw->Context, argv: list of string)
 	layout(tbtop);
 
 	shctxt := Context.new(ctxt);
-	shctxt.addmodule("wm", myselfbuiltin);
+	shctxt.addmodule("awm", myselfbuiltin);
 
 	snarfIO: ref Sys->FileIO;
 	if(ownsnarf){
@@ -234,6 +234,11 @@ handlerequest(clientid: string, args: list of string): string
 iconify(id, label: string)
 {
 	label = condenselabel(label);
+	
+	padf := ".toolbar.sp"+id;
+	tk->cmd(tbtop, "frame " + padf + " -width 2");
+	cmd(tbtop, "pack " + padf + " -side left -fill y");
+
 	e := tk->cmd(tbtop, "button .toolbar." +id+" -command {send task "+id+"} -takefocus 0");
 	cmd(tbtop, ".toolbar." +id+" configure -text '" + label);
 	if(e[0] != '!')
@@ -248,17 +253,20 @@ deiconify(id: string)
 		tkclient->wmctl(tbtop, sys->sprint("ctl %q untask", id));
 		tkclient->wmctl(tbtop, sys->sprint("ctl %q kbdfocus 1", id));
 	}
+	tk->cmd(tbtop, "destroy .toolbar.sp"+id);
 	cmd(tbtop, "update");
 }
 
 layout(top: ref Tk->Toplevel)
 {
 	r := top.screenr;
-	h := 122; #32;
+	htb := int (r.dy()/20);
+
+	h := htb; #60; #32;
 	if(r.dy() < 480)
 		h = tk->rect(top, ".b", Tk->Border|Tk->Required).dy();
 	cmd(top, ". configure -x " + string r.min.x +
-			" -y " + string (r.max.y - h) +
+			" -y " + string r.min.y +  #(r.max.y - h) +
 			" -width " + string r.dx() +
 			" -height " + string h);
 	cmd(top, "update");
@@ -278,9 +286,12 @@ toolbar(ctxt: ref Draw->Context, startmenu: int,
 	tk->namechan(tbtop, task, "task");
 	cmd(tbtop, "frame .toolbar");
 	if (startmenu) {
-		cmd(tbtop, "menubutton .toolbar.start -menu .m -borderwidth 0 -bitmap vitabig.bit");
+		cmd(tbtop, "menubutton .toolbar.start -menu .m -borderwidth 0 -bitmap :" 
+					+ string (int (screenr.dy()/20) ) 
+					+ ":vitabig.png");
 		cmd(tbtop, "pack .toolbar.start -side left");
 	}
+
 	cmd(tbtop, "pack .toolbar -fill x");
 	cmd(tbtop, "menu .m");
 	return tbtop;
@@ -289,7 +300,7 @@ toolbar(ctxt: ref Draw->Context, startmenu: int,
 setup(shctxt: ref Context, finished: chan of int)
 {
 	ctxt := shctxt.copy(0);
-	ctxt.run(shell->stringlist2list("run"::"/lib/wmsetup"::nil), 0);
+	ctxt.run(shell->stringlist2list("run"::"/lib/awmsetup"::nil), 0);
 	# if no items in menu, then create some.
 	if (tk->cmd(tbtop, ".m type 0")[0] == '!')
 		ctxt.run(shell->stringlist2list(defaultscript::nil), 0);
@@ -383,12 +394,14 @@ builtin_menu(nil: ref Context, nil: Sh, argv: list of ref Listnode): string
 	primary := (hd tl argv).word;
 	argv = tl tl argv;
 
+	h_mnu_itm := string int (screenr.dy() / 30);
+
 	if (n == 3) {
 		w := word(hd argv);
 		if (len w == 0)
 			cmd(tbtop, ".m insert 0 separator");
 		else
-			cmd(tbtop, ".m insert 0 command -label " + tk->quote(primary) +
+			cmd(tbtop, ".m insert 0 command -height " + h_mnu_itm + " -label " + tk->quote(primary) +
 				" -command {send exec " + w + "}");
 	} else {
 		secondary := (hd argv).word;
@@ -398,13 +411,13 @@ builtin_menu(nil: ref Context, nil: Sh, argv: list of ref Listnode): string
 		e := tk->cmd(tbtop, mpath+" cget -width");
 		if(e[0] == '!') {
 			cmd(tbtop, "menu "+mpath);
-			cmd(tbtop, ".m insert 0 cascade -label "+tk->quote(primary)+" -menu "+mpath);
+			cmd(tbtop, ".m insert 0 cascade -height " + h_mnu_itm + " -label "+tk->quote(primary)+" -menu "+mpath);
 		}
 		w := word(hd argv);
 		if (len w == 0)
 			cmd(tbtop, mpath + " insert 0 separator");
 		else
-			cmd(tbtop, mpath+" insert 0 command -label "+tk->quote(secondary)+
+			cmd(tbtop, mpath+" insert 0 command -height " + h_mnu_itm + " -label "+tk->quote(secondary)+
 				" -command {send exec "+w+"}");
 	}
 	return nil;
@@ -481,7 +494,7 @@ con_cfg := array[] of
 	"frame .cons",
 	"scrollbar .cons.scroll -command {.cons.t yview}",
 	"text .cons.t -width 60w -height 15w -bg white "+
-		"-fg black -font /fonts/misc/latin1.6x13.font "+
+		"-fg black -font /fonts/misc/latin1.8x13.font "+
 		"-yscrollcommand {.cons.scroll set}",
 	"pack .cons.scroll -side left -fill y",
 	"pack .cons.t -fill both -expand 1",

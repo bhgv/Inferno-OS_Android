@@ -310,6 +310,20 @@ struct Cachesubf
 	Subfont		*f;	/* attached subfont */
 };
 
+typedef struct Cache Cache;
+struct Cache
+{
+	int	ref;
+	char*	name;
+	Display*display;
+	union{
+		Subfont*	sf;
+		Font*		f;
+		void*		ptr;
+	}u;
+	Cache*	next;
+};
+
 struct Font
 {
 	char		*name;

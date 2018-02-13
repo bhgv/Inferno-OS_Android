@@ -16,7 +16,7 @@ include "sys.m";
 
 include "draw.m";
         draw: Draw;
-	Rect, Point: import draw;
+	Rect, Point, Font: import draw;
 
 include "tk.m";
         tk: Tk;
@@ -33,8 +33,10 @@ Keybd: module
 	init:	fn(nil: ref Draw->Context, nil: list of string);
 };
 
-FONT: con "/fonts/vera/vera/vera.20.font";
-SPECFONT: con "/fonts/lucidasans/unicode.8.font";
+#FONT: con "/fonts/lucidasans/boldlatin1.6.font";
+#SPECFONT: con "/fonts/lucidasans/unicode.6.font";
+FONT_TTF: con "/fonts/ttf/Vera.ttf";
+SPECFONT_TTF: con "/fonts/ttf/FantasqueSansMono-Regular.ttf";
 
 # size in pixels
 #KEYSIZE: con 16;
@@ -152,17 +154,32 @@ init(ctxt: ref Draw->Context, args: list of string)
 	specials[ Esc       ].size = KEYSIZE_;
 	specials[ Space     ].size = (KEYSIZE_ + KEYGAP_) * 9;
 
-	KEYGAP_ -= (2 * KEYBORDER);
+	fnt_csz := int (KEYSIZE_ * 2/3);
+	fnt_nm := FONT_TTF + "_" + string fnt_csz;
+	fnt_str := string fnt_csz + " " + string int (fnt_csz * 5/6) + "\n0x0000 0x0fff " + FONT_TTF + "\n";
+	fnt := Font.build(ctxt.display, fnt_nm, fnt_str);
+#	sys->print("'%s':\n%s ==> %x\n", fnt.name, fnt_str, fnt);
+#	fnt_nm = fnt.name;
+
+	sfnt_csz := int (KEYSIZE_ / 2);
+	sfnt_nm := SPECFONT_TTF + "_" + string sfnt_csz;
+	sfnt_str := string sfnt_csz + " " + string int (sfnt_csz * 7/8) + "\n0x0000 0x0fff " + SPECFONT_TTF + "\n";
+	sfnt := Font.build(ctxt.display, sfnt_nm, sfnt_str);
+#	sys->print("'%s':\n%s ==> %x\n", sfnt.name, sfnt_str, sfnt);
+#	sfnt_nm = sfnt.name;
 
 	for(i := 0; i < len keys[0]; i++)
 		if(keys[0][i] != nil)
 			cmd(t, sys->sprint("button .b%d -takefocus 0 -font %s -width %d -height %d -bd %d -activebackground %s -text {%s} -command 'send keypress %d",
-				i, FONT, KEYSIZE_, KEYSIZE_, KEYBORDER, background, keys[0][i], keyvals[0][i]));
+				i, fnt_nm   #FONT
+				, KEYSIZE_, int (KEYSIZE_ * 3/2), 
+				KEYBORDER, background, keys[0][i], keyvals[0][i]));
 
 	for(i = 0; i < len specials; i++) {
 		k := specials[i];
 		for(xl := k.x; xl != nil; xl = tl xl)
-			cmd(t, sys->sprint(".b%d configure -font %s -width %d", hd xl, SPECFONT, k.size));
+			cmd(t, sys->sprint(".b%d configure -font %s -width %d", hd xl, sfnt_nm   #SPECFONT
+				, k.size));
 	}
 
 	# pack buttons in rows

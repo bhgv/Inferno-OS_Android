@@ -3,10 +3,16 @@ include "sys.m";
 	sys: Sys;
 include "draw.m";
 	draw: Draw;
-	Point, Rect: import draw;
+	Point, Rect, Font: import draw;
 include "tk.m";
 	tk: Tk;
 include "titlebar.m";
+
+
+FONT_TTF : con "/fonts/ttf/Vera.ttf";
+
+h_title := 0;
+title_fnt : ref Font;
 
 title_cfg := array[] of {
 	"frame .Wm_t -bg #aaaaaa -borderwidth 1",
@@ -38,8 +44,18 @@ init()
 new(top: ref Tk->Toplevel, buts: int): chan of string
 {
 	r := top.screenr;
-	h_title := string int (r.dy() / 30);
+	h_title = int (r.dy() / 30);
 
+
+	fnt_csz := int ( h_title * 2/3);
+	fnt_nm := FONT_TTF + "_" + string fnt_csz;
+	fnt_str := string fnt_csz + " " + string int (fnt_csz * 5/6) + "\n0x0000 0x0fff " + FONT_TTF + "\n";
+	fnt := Font.build(top.display, fnt_nm, fnt_str);
+#	sys->print("'%s':\n%s ==> %x\n", fnt.name, fnt_str, fnt);
+#	fnt_nm = fnt.name;
+	title_fnt = fnt;
+
+	
 	ctl := chan of string;
 	tk->namechan(top, ctl, "wm_title");
 
@@ -48,26 +64,26 @@ new(top: ref Tk->Toplevel, buts: int): chan of string
 
 	for(i := 0; i < len title_cfg; i++)
 		if(i == 1 || i == 3){
-			cmd(top, title_cfg[i] + h_title + title_cfg[i+1] );
+			cmd(top, title_cfg[i] + string h_title + title_cfg[i+1] );
 			i++;
 		}else{
 			cmd(top, title_cfg[i]);
 		}
 
 	if(buts & OK){
-		cmd(top, "button .Wm_t.ok -bg #ffee00 -bitmap :" + h_title + ":dialog-ok-apply.svg"+   #okbig.bit"+
+		cmd(top, "button .Wm_t.ok -bg #ffee00 -bitmap :" + string h_title + ":dialog-ok-apply.svg"+   #okbig.bit"+
 			" -command {send wm_title ok} -takefocus 0; pack .Wm_t.ok -side left");
 		cmd(top, "frame .Wm_t.okf -width 4 -takefocus 0; pack .Wm_t.okf -side left");
 	}
 
 	if(buts & Hide){
-		cmd(top, "button .Wm_t.top -bg #ffee00 -bitmap :" + h_title + ":window-minimize.svg"+   #-bitmap minimisebig.bit"+
+		cmd(top, "button .Wm_t.top -bg #ffee00 -bitmap :" + string h_title + ":window-minimize.svg"+   #-bitmap minimisebig.bit"+
 			" -command {send wm_title task} -takefocus 0; pack .Wm_t.top -side left");
 		cmd(top, "frame .Wm_t.topf -width 4 -takefocus 0; pack .Wm_t.topf -side left");
 	}
 
 	if(buts & Resize){
-		cmd(top, "button .Wm_t.m -bg #ffee00 -bitmap :" + h_title + ":window-maximize.svg"+   #-bitmap maximisebig.bit"+
+		cmd(top, "button .Wm_t.m -bg #ffee00 -bitmap :" + string h_title + ":window-maximize.svg"+   #-bitmap maximisebig.bit"+
 			" -command {send wm_title size} -takefocus 0; pack .Wm_t.m -side left");
 		cmd(top, "frame .Wm_t.mf -width 4 -takefocus 0; pack .Wm_t.mf -side left");
 	}
@@ -95,7 +111,7 @@ title(top: ref Tk->Toplevel): string
 settitle(top: ref Tk->Toplevel, t: string): string
 {
 	s := title(top);
-	tk->cmd(top, ".Wm_t.title configure -text '" + t);
+	tk->cmd(top, ".Wm_t.title configure -font " + title_fnt.name + " -text '" + t);
 	return s;
 }
 

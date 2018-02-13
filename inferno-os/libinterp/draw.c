@@ -65,6 +65,7 @@ typedef struct DImage DImage;
 typedef struct DScreen DScreen;
 typedef struct DFont DFont;
 
+/*
 struct Cache
 {
 	int	ref;
@@ -77,6 +78,7 @@ struct Cache
 	}u;
 	Cache*	next;
 };
+*/
 
 /* not visible to Limbo; used only for internal reference counting */
 struct DRef
@@ -1734,7 +1736,11 @@ Font_build(void *fp)
 		font = buildfont(disp, data, name);
 		if(locked)
 			unlockdisplay(disp);
-		if(font == nil)
+		if(font){
+			Cache *c = cacheinstall(fcache, disp, name, font, "font");
+			if(c)
+				c->ref++;
+		}else
 			return;
 	}
 

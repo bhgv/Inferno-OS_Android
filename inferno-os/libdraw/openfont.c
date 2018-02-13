@@ -10,6 +10,9 @@ openfont(Display *d, char *name)
 	char *buf;
 	Dir *dir;
 
+	if( is_subfont_ft(name) )
+		return nil;
+
 	fd = libopen(name, OREAD);
 	if(fd < 0)
 		return 0;

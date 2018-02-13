@@ -1,1 +1,1 @@
--f/fonts/ttf/fantasques_30.font wm/awm
+-f/fonts/ttf/FantasqueSansMono-Regular.ttf wm/awm
