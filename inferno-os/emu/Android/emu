@@ -61,6 +61,7 @@ mod
 	freetype
 
 port
+	calltrace
 	alloc-andr
 	cache
 	chan-andr

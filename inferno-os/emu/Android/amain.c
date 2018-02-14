@@ -38,6 +38,8 @@ extern	int	mflag;
 
 	int is_run = 0;
 
+	char calltracelog_path[128];
+
 
 static void
 usage(void)
@@ -248,6 +250,7 @@ char* loadcmdstr(char *sdcard)
 {
 	char path[128];
 	char *cmdln = malloc(256);
+	char *tmp;
 	FILE *f;
 
 	memset(cmdln, 0, 256);
@@ -258,6 +261,9 @@ LOGI("amain f=%x, cmdstr-path=%s", f, path);
 	if(f){
 		fread(cmdln, 255, 1, f);
 		fclose(f);
+		tmp = strdup(cmdln);
+		snprint(cmdln, 255, "-r%s %s", sdcard, tmp);
+		free(tmp);
 	}
 LOGI("amain cmdstr=%s", cmdln);
 	return cmdln;
@@ -272,6 +278,8 @@ amain()
 
 	char sdcard_path[128];
 
+	FILE *f;
+
 	if(is_run)
 		return;
 	else
@@ -285,12 +293,20 @@ amain()
 	/* set default root now, so either $EMU or -r can override it later */
 	snprint(sdcard_path, 127, "%s/Inferno", getenv("EXTERNAL_STORAGE"));
 	strecpy(rootdir, rootdir+sizeof(rootdir), sdcard_path);
+	
+	snprint(calltracelog_path, 127, "%s/backtrace.log", rootdir);
+	f = fopen(calltracelog_path, "a");
+	if(f){
+		fprintf(f, "\n\n----! New Session !----\n");
+		fflush(f);
+		close(f);
+	}
 
-	opt = loadcmdstr(sdcard_path);
+	opt = loadcmdstr(rootdir);
 	if(opt == nil || opt[0] == '\0'){
 		if(opt == nil)
 			opt = (char*)malloc(128);
-		snprint(opt, 127, "-r%s -g%dx%d wm/awm", sdcard_path, Xsize, Ysize);
+		snprint(opt, 127, "-r%s -g%dx%d wm/awm", rootdir, Xsize, Ysize);
 	}
 	//opt = getenv("EMU");
 	if(opt != nil && *opt != '\0') {
@@ -404,8 +420,15 @@ errorf(char *fmt, ...)
 void
 error(char *err)
 {
-LOGE("Error: %s (errno=%d: %s)", err, errno, strerror(errno));
+	char str[256];
 
+	snprint(str, 255, "Error: %s (errno=%d: %s)", err, errno, strerror(errno) );
+	
+	if(errno && errno != 2 && errno != 22)
+		do_backtrace(str);
+	
+LOGE("%s", str);
+	
 	if(err != up->env->errstr && up->env->errstr != nil)
 		kstrcpy(up->env->errstr, err, ERRMAX);
 //	ossetjmp(up->estack[NERR-1]);

@@ -989,6 +989,10 @@ disfault(void *reg, char *msg)
 
 	USED(reg);
 
+#ifdef ANDROID
+	do_backtrace(nil);
+#endif
+
 	if(strncmp(msg, Eintr, 6) == 0)
 		exits(0);
 

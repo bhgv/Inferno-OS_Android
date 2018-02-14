@@ -13,6 +13,7 @@ ASFLAGS=	-march=armv7-a -marm
 
 CC=		arm-linux-androideabi-gcc -c 
 CFLAGS=		-O\
+		-g\
 		-fPIE -fPIC -std=c99\
 		-Wuninitialized -Wunused-variable -Wreturn-type -Wimplicit\
 		-Wattributes\
@@ -30,11 +31,14 @@ CFLAGS=		-O\
 		--sysroot=$ROOT/ndk_toolchain/sysroot 
 
 #-static
+#		-g -finstrument-functions\
+#		-g -funwind-tables\
 
 
 ANSICPP=
 LD=		arm-linux-androideabi-gcc 
-LDFLAGS=	-L$ROOT/ndk_toolchain/sysroot/usr/lib -llog
+LDFLAGS=	-L$ROOT/ndk_toolchain/sysroot/usr/lib -llog 
+#-lbfd
 
 SYSLIBS=
 

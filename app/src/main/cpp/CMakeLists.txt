@@ -93,7 +93,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fPIC -fPIE")
 # Export ANativeActivity_onCreate(),
 # Refer to: https://github.com/android-ndk/ndk/issues/381.
 set(CMAKE_SHARED_LINKER_FLAGS
-    "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate -fPIC -fPIE")
+    "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate -fPIC -fPIE -Wl,--allow-multiple-definition -flto -L${infrlib_DIR}"
+)
 
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall")
@@ -129,7 +130,7 @@ target_link_libraries(inferno_os_app
     lib9
     emu
 
-    native-audio 
+    native-audio
     )
 #    -Wl,--start-group
 #     -Wl,--end-group

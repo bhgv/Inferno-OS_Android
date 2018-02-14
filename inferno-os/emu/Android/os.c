@@ -23,7 +23,6 @@
 #define	getpid()	syscall(SYS_getpid)
 
 
-
 #include <android/log.h>
 	
 #define  LOG_TAG    "Inferno OS"
@@ -32,6 +31,8 @@
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 
+
+void *sig_ctx = nil;
 
 
 enum
@@ -66,9 +67,12 @@ trapILL(int signo, siginfo_t *si, void *a)
 {
 	USED(signo);
 	USED(a);
-LOGE("trapILL: illegal instruction pc=", si->si_addr);
 
-	sysfault("illegal instruction pc=", si->si_addr);
+	sig_ctx = a;
+	
+LOGE("trapILL: illegal instruction pc=%p", si->si_addr);
+
+	sysfault("illegal instruction pc=%#p", si->si_addr);
 }
 
 static int
@@ -81,12 +85,15 @@ static void
 trapmemref(int signo, siginfo_t *si, void *a)
 {
 	USED(a);	/* ucontext_t*, could fetch pc in machine-dependent way */
+
+	sig_ctx = a;
+	
 	if(isnilref(si))
 		disfault(nil, exNilref);
 	else if(signo == SIGBUS)
 		sysfault("bad address addr=", si->si_addr);	/* eg, misaligned */
 	else
-		sysfault("segmentation violation addr=", si->si_addr);
+		sysfault("segmentation violation addr=%#p", si->si_addr);
 }
 
 static void
@@ -96,6 +103,9 @@ trapFPE(int signo, siginfo_t *si, void *a)
 
 	USED(signo);
 	USED(a);
+
+	sig_ctx = a;
+	
 	snprint(buf, sizeof(buf), "sys: fp: exception status=%.4lux pc=%#p", getfsr(), si->si_addr);
 LOGE("trapFPE: %s", buf);
 	disfault(nil, buf);
