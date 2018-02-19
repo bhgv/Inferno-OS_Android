@@ -23,6 +23,7 @@ dev
 	snarf
 
 	audio_andr
+	gui
 
 #	ip	ipif6-posix ipaux
 #	eia
@@ -105,7 +106,8 @@ root
 	/chan	/
 	/nvfs	/
 	/env	/
-	/n
+	/n	/
+	/gui	/
 #	/dis
 #	/n
 #	/icons

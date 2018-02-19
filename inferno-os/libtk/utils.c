@@ -743,6 +743,8 @@ tkaddchild(TkTop *t, Tk *tk, TkName **names)
 			return TkBadwp;
 		}
 	}
+	tk->name_tail = (*ep == '.') ? ep+1 : ep;
+
 	*l = tk;
 	tk->name = n;
 	*names = n->link;

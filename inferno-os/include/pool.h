@@ -1,3 +1,6 @@
+#ifndef _POOL_H
+#define _POOL_H
+
 /* Inferno tree allocator */
 
 typedef struct Pool Pool;
@@ -71,3 +74,5 @@ extern	void	poolsetcompact(Pool*, void (*)(void*, void*));
 extern	char*	poolaudit(char*(*)(int, Bhdr *));
 
 extern	void	(*poolmonitor)(int, ulong, Bhdr*, ulong);
+
+#endif

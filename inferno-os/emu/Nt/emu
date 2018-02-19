@@ -27,6 +27,8 @@ dev
 	pointer
 	snarf
 
+	gui
+
 lib
 	interp
 	tk
@@ -39,6 +41,8 @@ lib
 	sec
 	mp
 	9
+
+	lodepng
 
 link
 
@@ -96,6 +100,8 @@ root
 	/chan	/
 	/nvfs	/
 	/env	/
+	/n	/
+	/gui	/
 #	/chan
 #	/dev
 #	/dis

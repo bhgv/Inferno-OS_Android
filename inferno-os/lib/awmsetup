@@ -6,6 +6,11 @@ fn % {$*}
 autoload=std
 home=/usr/^"{cat /dev/user}
 
+
+bind -b '#A' /dev
+bind '#G' /gui
+
+
 if {! {~ awm ${loaded}}} {
 	echo awmsetup must run under awm >[1=2]
 	raise usage

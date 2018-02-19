@@ -474,6 +474,8 @@ struct Tk
 	Rectangle	dirty;	/* dirty rectangle, relative to widget */
 	TkGrid*	grid;		/* children are packed in a grid */
 
+	char *name_tail;
+
 	/* followed by widget-dependent data */
 };
 

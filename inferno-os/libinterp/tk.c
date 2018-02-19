@@ -11,6 +11,10 @@
 #include "raise.h"
 #include "kernel.h"
 
+#include "../emu/port/dat.h"
+//#include "emu.h"
+
+
 extern	void	tkfreetop(Heap*, int);
 Type*	fakeTkTop;
 static	uchar	TktypeMap[] = Tk_Toplevel_map;
@@ -144,6 +148,9 @@ Tk_toplevel(void *a)
 	Setmark(h);
 	poolmutable(h);
 	t->wreq = cnewc(&Tptr, movp, 8);
+
+	(currun())->tktop = t;
+	
 	*f->ret = (Tk_Toplevel*)t;
 }
 

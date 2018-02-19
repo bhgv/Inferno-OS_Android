@@ -1,3 +1,7 @@
+#ifndef _EMU_H
+#define _EMU_H
+
+
 /*
  * system- and machine-specific declarations for emu:
  * floating-point save and restore, signal handling primitive, and
@@ -22,3 +26,4 @@ extern	__declspec(thread) Proc*	up;
 typedef jmp_buf osjmpbuf;
 #define	ossetjmp(buf)	setjmp(buf)
 
+#endif

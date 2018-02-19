@@ -263,6 +263,8 @@ struct Prog
 	void		(*xec)(Prog*);
 
 	void*		osenv;
+
+	void*	tktop; //TkTop*
 };
 
 struct Module

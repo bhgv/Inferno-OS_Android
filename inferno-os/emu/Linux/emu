@@ -95,6 +95,7 @@ root
 	/chan	/
 	/nvfs	/
 	/env	/
+	/gui	/
 #	/dis
 #	/n
 #	/icons
