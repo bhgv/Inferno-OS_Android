@@ -400,8 +400,13 @@ TkCmdtab tkpanelcmd[] =
 	nil
 };
 
+static TkOption* opts4panelmethod[] = { tkgeneric, tkpanelopts, nil };
+
 TkMethod panelmethod = {
 	"panel",
+
+	opts4panelmethod,
+
 	tkpanelcmd,
 	tkfreepanel,
 	tkdrawpanel

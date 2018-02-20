@@ -266,8 +266,13 @@ TkCmdtab tkframecmd[] =
 	nil
 };
 
+static TkOption* opts4framemethod[] = { tkgeneric, tktop, nil };
+
 TkMethod framemethod = {
 	"frame",
+
+	opts4framemethod,
+
 	tkframecmd,
 	tkfreeframe,
 	tkdrawframe,

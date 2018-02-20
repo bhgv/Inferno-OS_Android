@@ -356,8 +356,13 @@ TkCmdtab tklabelcmd[] =
 	nil
 };
 
+static TkOption* opts4labelmethod[] = { tkgeneric, tklabelopts, nil };
+
 TkMethod labelmethod = {
 	"label",
+
+	opts4labelmethod,
+
 	tklabelcmd,
 	tkfreelabel,
 	tkdrawlabel,

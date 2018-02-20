@@ -734,8 +734,13 @@ TkCmdtab tkscrlbcmd[] =
 	nil
 };
 
+static TkOption* opts4scrollbarmethod[] = { tkgeneric, opts, nil };
+
 TkMethod scrollbarmethod = {
 	"scrollbar",
+	
+	opts4scrollbarmethod,
+
 	tkscrlbcmd,
 	tkfreescrlb,
 	tkdrawscrlb

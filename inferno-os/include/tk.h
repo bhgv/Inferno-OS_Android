@@ -504,6 +504,9 @@ struct TkWin
 struct TkMethod
 {
 	char*		name;
+	
+	TkOption**	opts;
+	
 	TkCmdtab*	cmd;
 	void		(*free)(Tk*);
 	char*	(*draw)(Tk*, Point);

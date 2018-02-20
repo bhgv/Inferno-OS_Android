@@ -1535,7 +1535,7 @@ tkvalue(char **val, char *fmt, ...)
 	return nil;
 }
 
-static char*
+char*
 tkwidgetcmd(TkTop *t, Tk *tk, char *arg, char **val)
 {
 	TkMethod *cm;
@@ -1656,7 +1656,7 @@ tksorttable(void)
 	}
 }
 
-static char*
+char*
 tksinglecmd(TkTop *t, char *arg, char **val)
 {
 	Tk *tk;

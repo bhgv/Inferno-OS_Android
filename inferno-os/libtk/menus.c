@@ -1789,8 +1789,13 @@ TkCmdtab choicebutcmd[] =
 	nil
 };
 
+static TkOption* opts4menumethod[] = { tkgeneric, mbopts, nil };
+
 TkMethod menumethod = {
 	"menu",
+
+	opts4menumethod,
+
 	menucmd,
 	freemenu,
 	drawmenu,
@@ -1802,15 +1807,25 @@ TkMethod menumethod = {
 	menuevent
 };
 
+static TkOption* opts4menubuttonmethod[] = { tkgeneric, mbopts, nil };
+
 TkMethod menubuttonmethod = {
 	"menubutton",
+	
+	opts4menubuttonmethod,
+	
 	menubutcmd,
 	tkfreelabel,
 	tkdrawlabel
 };
 
+static TkOption* opts4choicebuttonmethod[] = { tkgeneric, choiceopts, nil };
+
 TkMethod choicebuttonmethod = {
 	"choicebutton",
+	
+	opts4choicebuttonmethod,
+	
 	choicebutcmd,
 	tkfreelabel,
 	tkdrawlabel,
@@ -1825,15 +1840,25 @@ TkMethod choicebuttonmethod = {
 	tkchoicevarchanged
 };
 
+static TkOption* opts4separatormethod[] = { tkgeneric, mbopts, nil };
+
 TkMethod separatormethod = {
 	"separator",
+	
+	opts4separatormethod,
+	
 	nil,
 	tkfreeframe,
 	tkdrawframe
 };
 
+static TkOption* opts4cascademethod[] = { tkgeneric, mbopts, nil };
+
 TkMethod cascademethod = {
 	"cascade",
+	
+	opts4cascademethod,
+	
 	nil,
 	tkfreelabel,
 	tkdrawlabel

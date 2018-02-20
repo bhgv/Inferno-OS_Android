@@ -3683,8 +3683,13 @@ TkCmdtab tktextcmd[] =
 	nil
 };
 
+static TkOption* opts4textmethod[] = { tkgeneric, textopts, nil };
+
 TkMethod textmethod = {
 	"text",
+
+	opts4textmethod,
+
 	tktextcmd,
 	tkfreetext,
 	tkdrawtext,

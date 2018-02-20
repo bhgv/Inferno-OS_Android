@@ -1056,8 +1056,13 @@ TkCmdtab tklistcmd[] =
 	nil
 };
 
+static TkOption* opts4listboxmethod[] = { tkgeneric, opts, nil };
+
 TkMethod listboxmethod = {
 	"listbox",
+
+	opts4listboxmethod,
+
 	tklistcmd,
 	tkfreelistb,
 	tkdrawlistb,

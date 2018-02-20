@@ -45,22 +45,20 @@ enum
 #define QCTL_NAME	((ulong)0x00008000)
 
 
-/*
-Dirtab guitab[] =
-{
-	".",		{Qdir, 0, QTDIR},	0,	0555,
-	"gui",		{Qgui},	0,	0666,
-	"guictl",	{Qguictl},	0,	0666,
-};
-*/
 
 
 
 extern char rootdir[];
 
 
-
 void guictl_wr_pars(char* in, int count);
+
+
+extern TkMethod *tkmethod[];
+extern TkCimeth tkcimethod[];
+
+extern char* tksinglecmd(TkTop *t, char *arg, char **val);
+//extern char* tkwidgetcmd(TkTop *t, Tk *tk, char *arg, char **val);
 
 
 
@@ -194,6 +192,16 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 			}
 
 			if( strcmp(name, ".self") ){
+				char *p, *pr = nil;
+				
+				for(p = name; *p != '\0'; p++){
+					if(*p == '.'){
+						pr = p;
+						*p = '\0';
+						break;
+					}
+				}
+
 				for( tk2 = tk->slave; tk2; tk2 = tk2->next){
 					if( !strcmp(name, 
 							tk2->name_tail
@@ -207,6 +215,8 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 					release();
 					return -1;
 				}
+				if(pr != nil)
+					*pr = '.';
 				
 				for( n = 1, tk = t->root; tk != tk2; tk = tk->siblings, n++){
 					if(tk == nil){
@@ -220,7 +230,6 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 
 		}
 		else{
-//		printf("\n-- (%d) --\n", PID(c->qid));
 			t = p->tktop;
 		
 			tkr = t->root;
@@ -265,10 +274,11 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 		return 1;
 		
 	}else if(tk2){
-		snprint(up->genbuf, 127, "%s", 
+		snprint(up->genbuf, 127, "%s.%s", 
 				tk2->name_tail
 				? tk2->name_tail
-				: tk2->name->name
+				: tk2->name->name,
+				tkmethod[tk2->type]->name
 		);
 		if(name != nil && strcmp(name, up->genbuf) != 0){
 			release();
@@ -499,11 +509,6 @@ guiclose(Chan *c)
 }
 
 
-
-extern TkMethod *tkmethod[];
-extern TkCimeth tkcimethod[];
-
-
 static long
 guiread(Chan *c, void *va, long count, vlong offset)
 {
@@ -633,8 +638,7 @@ guiread(Chan *c, void *va, long count, vlong offset)
 	if(offset == 0 && p->tktop){
 		TkTop *t;
 		Tk *tkr, *tk, *tk2;
-		int i, n;
-//		printf("\n-- (%d) --\n", PID(c->qid));
+		int i, j, k, n;
 
 		t = p->tktop;
 		
@@ -652,6 +656,7 @@ guiread(Chan *c, void *va, long count, vlong offset)
 		
 		if(tk2){
 			char *va2 = va;
+			TkOption **opts;
 			
 			i = 0;
 		
@@ -665,24 +670,46 @@ guiread(Chan *c, void *va, long count, vlong offset)
 			else
 				i += snprint(va2+i, count-i, "name='%s';\n", tkname(tk2));
 
-			i += snprint(va2+i, count-i, "x=%d; y=%d; w=%d; h=%d;\n", 
-										tk2->act.x, tk2->act.y, tk2->act.width, tk2->act.height);
+//			i += snprint(va2+i, count-i, "x=%d; y=%d; w=%d; h=%d;\n", 
+//										tk2->act.x, tk2->act.y, tk2->act.width, tk2->act.height);
 
-			i += snprint(va2+i, count-i, "# tk %#p; \nflag=%#ux; \ngrid=%#p; \n", tk2, tk2->flag, tk2->grid);
+			i += snprint(va2+i, count-i, "\n# Options:\n# --------\n\n");
+			opts = tkmethod[tk2->type]->opts;
+			for(j=0; opts[j] != nil; j++){
+				for(k=0; opts[j][k].o != nil; k++ ){
+					TkOption *opt = &opts[j][k];
+					char buf[256];
+					char *rv = nil;
+
+					if(opt->o != nil){
+						snprint(buf, 255, "%s cget %s", tkname(tk2), opt->o);
+						tksinglecmd(t, buf, &rv);
+						if(rv){
+							i += snprint(va2+i, count-i, "%s=%s;\n", opt->o, rv);
+							free(rv);
+						}
+					}
+				}
+				i += snprint(va2+i, count-i, "\n");
+			}
+
+//			i += snprint(va2+i, count-i, "# tk %#p; \nflag=%#ux; \ngrid=%#p; \n", tk2, tk2->flag, tk2->grid);
 			
-			if(tk2->parent != nil)
-				i += snprint(va2+i, count-i, "parent=[%#p %q];\n", tk2->parent, tkname(tk2->parent));
+//			if(tk2->parent != nil)
+//				i += snprint(va2+i, count-i, "parent=[%#p %q];\n", tk2->parent, tkname(tk2->parent));
 			
-			if(tk2->master != nil)
-				i += snprint(va2+i, count-i, "master=[%#p %q];\n", tk2->master, tkname(tk2->master));
-			
+//			if(tk2->master != nil)
+//				i += snprint(va2+i, count-i, "master=[%#p %q];\n", tk2->master, tkname(tk2->master));
+
+/**/
 			if(tk2->slave != nil){
 				Tk *sl;
-				i += snprint(va2+i, count-i, "\nslaves:\n");
+				i += snprint(va2+i, count-i, "\n# Slaves:\n# -------\n\n");
 				for(sl = tk2->slave; sl != nil; sl = sl->next)
-					i += snprint(va2+i, count-i, "[%#p %q];\n", sl, tkname(sl));
+					i += snprint(va2+i, count-i, "# [%q %s];\n", tkname(sl), tkmethod[sl->type]->name);
 			}
 			i += snprint(va2+i, count-i, "\n");
+/**/
 
 			tk = tk2;
 			len = i;
@@ -698,14 +725,16 @@ guiread(Chan *c, void *va, long count, vlong offset)
 				if(tk == nil)
 					return len;
 				
+				n += snprint(va2+n, count-n, "\n# Canvas cmds:\n# ------------\n\n");
+				
 				c = TKobj(TkCanvas, tk);
 				tkfprint(v1, c->width);
 				tkfprint(v2, c->height);
-				n += snprint(va2+n, count-n, "%q configure -width %s -height %s;\n", tkname(tk), v1, v2);
+				n += snprint(va2+n, count-n, "configure -width %s -height %s;\n", v1, v2);
 				n += snprint(va2+n, count-n, "# focus %#p mouse %#p grab %#p\n\n", c->focus, c->mouse, c->grab);
 
 				for(it = c->head; it != nil; it = it->next){
-					n += snprint(va2+n, count-n, "%q create %q", tkname(tk), tkcimethod[it->type].name);
+					n += snprint(va2+n, count-n, "create %q", tkcimethod[it->type].name);
 					for(i = 0; i < it->p.npoint; i++){
 						tkfprint(v1, it->p.parampt[i].x);
 						tkfprint(v2, it->p.parampt[i].y);
@@ -754,7 +783,7 @@ guiwrite(Chan *c, void *va, long count, vlong offset)
 	if(p == nil)
 		error(Ethread);
 
-//	switch(c->qid.path) {
+/*
 	switch(QID(c->qid)){
 	case Qgui:
 		if(count > 0){
@@ -767,6 +796,7 @@ guiwrite(Chan *c, void *va, long count, vlong offset)
 		return count;
 		//return gui_ctl_write(c, va, count, offset);
 	}
+*/
 	return 0;
 }
 

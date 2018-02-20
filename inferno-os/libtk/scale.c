@@ -955,8 +955,13 @@ TkCmdtab tkscalecmd[] =
 	nil
 };
 
+static TkOption* opts4scalemethod[] = { tkgeneric, opts, nil };
+
 TkMethod scalemethod = {
 	"scale",
+
+	opts4scalemethod,
+
 	tkscalecmd,
 	tkfreescale,
 	tkdrawscale

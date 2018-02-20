@@ -752,8 +752,13 @@ TkCmdtab tkradbuttoncmd[] =
 	nil
 };
 
+static TkOption* opts4buttonmethod[] = { tkgeneric, tkbutopts, nil };
+
 TkMethod buttonmethod = {
 	"button",
+	
+	opts4buttonmethod,
+	
 	tkbuttoncmd,
 	tkfreebutton,
 	tkdrawbutton,
@@ -761,8 +766,13 @@ TkMethod buttonmethod = {
 	tklabelgetimgs
 };
 
+static TkOption* opts4checkbuttonmethod[] = { tkgeneric, tkbutopts, tkcbopts, nil };
+
 TkMethod checkbuttonmethod = {
 	"checkbutton",
+
+	opts4checkbuttonmethod,
+
 	tkchkbuttoncmd,
 	tkfreebutton,
 	tkdrawbutton,
@@ -777,8 +787,13 @@ TkMethod checkbuttonmethod = {
 	tkvarchanged
 };
 
+static TkOption* opts4radiobuttonmethod[] = { tkgeneric, tkbutopts, tkradopts, nil };
+
 TkMethod radiobuttonmethod = {
 	"radiobutton",
+	
+	opts4radiobuttonmethod,
+
 	tkradbuttoncmd,
 	tkfreebutton,
 	tkdrawbutton,

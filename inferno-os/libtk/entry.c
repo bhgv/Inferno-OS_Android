@@ -1359,8 +1359,13 @@ TkCmdtab tkentrycmd[] =
 	nil
 };
 
+static TkOption* opts4entrymethod[] = { tkgeneric, opts, nil };
+
 TkMethod entrymethod = {
 	"entry",
+	
+	opts4entrymethod,
+
 	tkentrycmd,
 	tkfreeentry,
 	tkdrawentry,

@@ -2202,8 +2202,13 @@ TkCmdtab tkcanvcmd[] =
 	nil
 };
 
+static TkOption* opts4canvasmethod[] = { opts, tkgeneric, nil };
+
 TkMethod canvasmethod = {
 	"canvas",
+
+	opts4canvasmethod,
+	
 	tkcanvcmd,
 	tkfreecanv,
 	tkdrawcanv,
