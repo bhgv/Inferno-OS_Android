@@ -351,8 +351,8 @@ tklabelgetimgs(Tk *tk, Image **image, Image **mask)
 static
 TkCmdtab tklabelcmd[] =
 {
-	"cget",			tklabelcget,
-	"configure",		tklabelconf,
+	"cget",			tklabelcget,		TK_CMD_NONE,
+	"configure",		tklabelconf,	TK_CMD_NONE,
 	nil
 };
 

@@ -1739,53 +1739,53 @@ menuevent(Tk *tk, int event, void *a)
 static
 TkCmdtab menucmd[] =
 {
-	"activate",		tkmenuactivate,
-	"add",			tkmenuadd,
-	"cget",			tkmenucget,
-	"configure",		tkmenuconf,
-	"delete",		tkmenudelete,
-	"entryconfigure",	tkmenuentryconfig,
-	"entrycget",		tkmenuentrycget,
-	"index",		tkmenuindex,
-	"insert",		tkmenuinsert,
-	"invoke",		tkmenuinvoke,
-	"post",			tkmenupost,
-	"postcascade",		tkmenupostcascade,
-	"type",			tkmenutype,
-	"unpost",		tkmenuunpost,
-	"yposition",		tkmenuyposn,
-	"suspend",		tkmenususpend,
+	"activate",		tkmenuactivate,			TK_CMD_IN,
+	"add",			tkmenuadd,				TK_CMD_IN,
+	"cget",			tkmenucget,				TK_CMD_NONE,
+	"configure",		tkmenuconf,			TK_CMD_NONE,
+	"delete",		tkmenudelete,			TK_CMD_IN,
+	"entryconfigure",	tkmenuentryconfig,	TK_CMD_NONE,
+	"entrycget",		tkmenuentrycget,	TK_CMD_NONE,
+	"index",		tkmenuindex,			TK_CMD_INOUT,
+	"insert",		tkmenuinsert,			TK_CMD_IN,
+	"invoke",		tkmenuinvoke,			TK_CMD_IN,
+	"post",			tkmenupost,				TK_CMD_IN,
+	"postcascade",	tkmenupostcascade,		TK_CMD_IN,
+	"type",			tkmenutype,				TK_CMD_INOUT,
+	"unpost",		tkmenuunpost,			TK_CMD_IN,
+	"yposition",	tkmenuyposn,			TK_CMD_INOUT,
+	"suspend",		tkmenususpend,			TK_CMD_IN,
 	nil
 };
 
 static
 TkCmdtab menubutcmd[] =
 {
-	"cget",			tkmenubutcget,
-	"configure",		tkmenubutconf,
-	"tkMBenter",		tkMBenter,
-	"tkMBleave",		tkMBleave,
-	"tkMBpress",		tkMBpress,
-	"tkMBkey",		tkMBkey,
+	"cget",			tkmenubutcget,			TK_CMD_NONE,
+	"configure",		tkmenubutconf,		TK_CMD_NONE,
+	"tkMBenter",		tkMBenter,			TK_CMD_IN,
+	"tkMBleave",		tkMBleave,			TK_CMD_IN,
+	"tkMBpress",		tkMBpress,			TK_CMD_IN,
+	"tkMBkey",		tkMBkey,				TK_CMD_IN,
 	nil
 };
 
 static
 TkCmdtab choicebutcmd[] =
 {
-	"cget",			tkmenubutcget,
-	"configure",		tkmenubutconf,
-	"set",			tkchoicebutset,
-	"get",			tkchoicebutget,
-	"setvalue",		tkchoicebutsetvalue,
-	"getvalue",		tkchoicebutgetvalue,
-	"invoke",			tkchoicebutinvoke,
-	"valuecount",		tkchoicebutvaluecount,
-	"tkMBenter",		tkMBenter,
-	"tkMBleave",		tkMBleave,
-	"tkMBpress",		tkMBpress,
-	"tkMBkey",		tkMBkey,
-	"suspend",		tkmenususpend,
+	"cget",			tkmenubutcget,				TK_CMD_NONE,
+	"configure",		tkmenubutconf,			TK_CMD_NONE,
+	"set",			tkchoicebutset,				TK_CMD_IN,
+	"get",			tkchoicebutget,				TK_CMD_INOUT,
+	"setvalue",		tkchoicebutsetvalue,		TK_CMD_IN,
+	"getvalue",		tkchoicebutgetvalue,		TK_CMD_IN,
+	"invoke",			tkchoicebutinvoke,		TK_CMD_INOUT,
+	"valuecount",		tkchoicebutvaluecount,	TK_CMD_OUT,
+	"tkMBenter",		tkMBenter,				TK_CMD_IN,
+	"tkMBleave",		tkMBleave,				TK_CMD_IN,
+	"tkMBpress",		tkMBpress,				TK_CMD_IN,
+	"tkMBkey",		tkMBkey,					TK_CMD_IN,
+	"suspend",		tkmenususpend,				TK_CMD_IN,
 	nil
 };
 

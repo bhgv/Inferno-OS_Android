@@ -225,6 +225,9 @@ struct Image
 	int		repl;		/* flag: data replicates to tile clipr */
 	Screen		*screen;	/* 0 if not a window */
 	Image		*next;	/* next in list of windows */
+
+	char	*fpath;
+	
 	Reffn		reffn;
 	void		*refptr;
 };

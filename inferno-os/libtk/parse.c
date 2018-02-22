@@ -429,8 +429,11 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 		free(buf);
 		return nil;
 	case OPTbmap:
-		//free(buf);
-		return tkvalue(val, "%d", OPTION(ft->ptr, Image*, o->offset) != nil);
+		{
+			Image *i = OPTION(ft->ptr, Image*, o->offset);
+			//free(buf);
+			return tkvalue(val, "%s", (i && i->fpath) ? i->fpath : "");
+		}
 	case OPTimag:
 		//free(buf);
 		return tkvalue(val, "%d", OPTION(ft->ptr, TkImg*, o->offset) != nil);
@@ -714,6 +717,7 @@ pbmap(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 	Image *i, **p;
 	int locked, fd;
 	char *c;
+	char *fpath=nil;
 
 	p = &OPTION(place, Image*, o->offset);
 
@@ -730,9 +734,11 @@ pbmap(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 		return nil;
 	}
 
+	fpath = strdup(buf);
+
 	if(buf[0] == '@')
 		i = display_open(d, buf+1);
-	 else if(buf[0] == '<') {
+	else if(buf[0] == '<') {
 		buf++;
 		fd = strtoul(buf, &c, 0);
 		if(c == buf) {
@@ -778,8 +784,15 @@ pbmap(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 		i = display_open(d, file);
 		free(file);
 	}
-	if(i == nil)
+	if(i == nil){
+		if(fpath)
+			free(fpath);
 		return TkBadbm;
+	}else{
+		if(i->fpath)
+			free(i->fpath);
+		i->fpath = fpath;
+	}
 
 	if(*p != nil) {
 		locked = lockdisplay(d);

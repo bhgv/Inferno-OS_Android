@@ -42,10 +42,10 @@ TkOption twinopts[] =
 TkCmdtab
 tktwincmd[] =
 {
-	"cget",		tktwincget,
-	"configure",	tktwinconfigure,
-	"create",	tktwincreate,
-	"names",	tktwinnames,
+	"cget",			tktwincget,			TK_CMD_NONE,
+	"configure",	tktwinconfigure,	TK_CMD_NONE,
+	"create",		tktwincreate,		TK_CMD_IN,
+	"names",		tktwinnames,		TK_CMD_OUT,
 	nil
 };
 

@@ -719,18 +719,18 @@ tkScrollDrag(Tk *tk, char *arg, char **val)
 
 TkCmdtab tkscrlbcmd[] =
 {
-	"activate",		tkscrollactivate,
-	"cget",			tkscrollcget,
-	"configure",		tkscrollconf,
-	"delta",		tkscrolldelta,
-	"fraction",		tkscrollfraction,
-	"get",			tkscrollget,
-	"identify",		tkscrollidentify,
-	"set",			tkscrollset,
-	"tkScrollDrag",		tkScrollDrag,
-	"tkScrolBut1P",		tkScrolBut1P,
-	"tkScrolBut1R",		tkScrolBut1R,
-	"tkScrolBut2P",		tkScrolBut2P,
+	"activate",		tkscrollactivate,		TK_CMD_IN,
+	"cget",			tkscrollcget,			TK_CMD_NONE,
+	"configure",		tkscrollconf,		TK_CMD_NONE,
+	"delta",		tkscrolldelta,			TK_CMD_INOUT,
+	"fraction",		tkscrollfraction,		TK_CMD_INOUT,
+	"get",			tkscrollget,			TK_CMD_OUT,
+	"identify",		tkscrollidentify,		TK_CMD_INOUT,
+	"set",			tkscrollset,			TK_CMD_IN,
+	"tkScrollDrag",		tkScrollDrag,		TK_CMD_IN,
+	"tkScrolBut1P",		tkScrolBut1P,		TK_CMD_IN,
+	"tkScrolBut1R",		tkScrolBut1R,		TK_CMD_IN,
+	"tkScrolBut2P",		tkScrolBut2P,		TK_CMD_IN,
 	nil
 };
 

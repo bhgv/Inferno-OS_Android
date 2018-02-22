@@ -76,18 +76,18 @@ TkOption tagenvopts[] =
 TkCmdtab
 tkttagcmd[] =
 {
-	"add",		tkttagadd,
-	"bind",		tkttagbind,
-	"cget",		tkttagcget,
-	"configure",	tkttagconfigure,
-	"delete",	tkttagdelete,
-	"lower",	tkttaglower,
-	"names",	tkttagnames,
-	"nextrange",	tkttagnextrange,
-	"prevrange",	tkttagprevrange,
-	"raise",	tkttagraise,
-	"ranges",	tkttagranges,
-	"remove",	tkttagremove,
+	"add",			tkttagadd,			TK_CMD_IN,
+	"bind",			tkttagbind,			TK_CMD_IN,
+	"cget",			tkttagcget,			TK_CMD_NONE,
+	"configure",	tkttagconfigure,	TK_CMD_NONE,
+	"delete",		tkttagdelete,		TK_CMD_IN,
+	"lower",		tkttaglower,		TK_CMD_IN,
+	"names",		tkttagnames,		TK_CMD_OUT,
+	"nextrange",	tkttagnextrange,	TK_CMD_INOUT,
+	"prevrange",	tkttagprevrange,	TK_CMD_INOUT,
+	"raise",		tkttagraise,		TK_CMD_IN,
+	"ranges",		tkttagranges,		TK_CMD_INOUT,
+	"remove",		tkttagremove,		TK_CMD_IN,
 	nil
 };
 

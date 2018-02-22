@@ -718,37 +718,37 @@ tkbuttondeselect(Tk *tk, char *arg, char **val)
 static
 TkCmdtab tkbuttoncmd[] =
 {
-	"cget",			tkbuttoncget,
-	"configure",		tkbuttonconf,
-	"invoke",		tkbuttoninvoke,
-	"tkButton1P",		tkbutton1p,
-	"tkButton1R",		tkbutton1r,
-	"tkButtonKey",		tkbuttonkey,
+	"cget",			tkbuttoncget,		TK_CMD_NONE,
+	"configure",		tkbuttonconf,	TK_CMD_NONE,
+	"invoke",		tkbuttoninvoke,		TK_CMD_IN,
+	"tkButton1P",		tkbutton1p,		TK_CMD_NONE,
+	"tkButton1R",		tkbutton1r,		TK_CMD_NONE,
+	"tkButtonKey",		tkbuttonkey,	TK_CMD_NONE,
 	nil
 };
 
 static
 TkCmdtab tkchkbuttoncmd[] =
 {
-	"cget",			tkbuttoncget,
-	"configure",		tkbuttonconf,
-	"invoke",		tkbuttoninvoke,
-	"select",		tkbuttonselect,
-	"deselect",		tkbuttondeselect,
-	"toggle",		tkbuttontoggle,
-	"tkButtonKey",		tkbuttonkey,
+	"cget",			tkbuttoncget,		TK_CMD_NONE,
+	"configure",		tkbuttonconf,	TK_CMD_NONE,
+	"invoke",		tkbuttoninvoke,		TK_CMD_IN,
+	"select",		tkbuttonselect,		TK_CMD_IN,
+	"deselect",		tkbuttondeselect,	TK_CMD_IN,
+	"toggle",		tkbuttontoggle,		TK_CMD_IN,
+	"tkButtonKey",		tkbuttonkey,	TK_CMD_NONE,
 	nil
 };
 
 static
 TkCmdtab tkradbuttoncmd[] =
 {
-	"cget",			tkbuttoncget,
-	"configure",		tkbuttonconf,
-	"invoke",		tkbuttoninvoke,
-	"select",		tkbuttonselect,
-	"deselect",		tkbuttondeselect,
-	"tkButtonKey",		tkbuttonkey,
+	"cget",			tkbuttoncget,		TK_CMD_NONE,
+	"configure",		tkbuttonconf,	TK_CMD_NONE,
+	"invoke",		tkbuttoninvoke,		TK_CMD_IN,
+	"select",		tkbuttonselect,		TK_CMD_IN,
+	"deselect",		tkbuttondeselect,	TK_CMD_IN,
+	"tkButtonKey",		tkbuttonkey,	TK_CMD_NONE,
 	nil
 };
 

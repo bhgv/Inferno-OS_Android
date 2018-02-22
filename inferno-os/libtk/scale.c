@@ -941,17 +941,17 @@ tkscalekey(Tk *tk, char *arg, char **val)
 
 TkCmdtab tkscalecmd[] =
 {
-	"cget",			tkscalecget,
-	"configure",		tkscaleconf,
-	"set",			tkscaleset,
-	"identify",		tkscaleident,
-	"get",			tkscaleget,
-	"coords",		tkscalecoords,
-	"tkScaleMotion",	tkscalemotion,
-	"tkScaleDrag",		tkscaledrag,
-	"tkScaleBut1P",		tkscalebut1p,
-	"tkScaleBut1R",		tkscalebut1r,
-	"tkScaleKey",		tkscalekey,
+	"cget",			tkscalecget,			TK_CMD_NONE,
+	"configure",		tkscaleconf,		TK_CMD_NONE,
+	"set",			tkscaleset,				TK_CMD_IN,
+	"identify",		tkscaleident,			TK_CMD_INOUT,
+	"get",			tkscaleget,				TK_CMD_OUT,
+	"coords",		tkscalecoords,			TK_CMD_OUT,
+	"tkScaleMotion",	tkscalemotion,		TK_CMD_IN,
+	"tkScaleDrag",		tkscaledrag,		TK_CMD_IN,
+	"tkScaleBut1P",		tkscalebut1p,		TK_CMD_IN,
+	"tkScaleBut1R",		tkscalebut1r,		TK_CMD_IN,
+	"tkScaleKey",		tkscalekey,			TK_CMD_IN,
 	nil
 };
 

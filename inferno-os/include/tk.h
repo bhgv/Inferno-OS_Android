@@ -240,10 +240,19 @@ struct TkMemimage
 	uchar*	data;
 };
 
+
+enum {
+	TK_CMD_NONE=0,
+	TK_CMD_OUT,
+	TK_CMD_IN,
+	TK_CMD_INOUT,
+};
+
 struct TkCmdtab
 {
 	char*		name;
 	char*		(*fn)(Tk*, char*, char**);
+	int			flag;
 };
 
 struct TkWinfo

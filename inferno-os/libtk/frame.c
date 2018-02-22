@@ -258,11 +258,11 @@ tkframefocusorder(Tk *tk)
 static
 TkCmdtab tkframecmd[] =
 {
-	"cget",			tkframecget,
-	"configure",		tkframeconf,
-	"map",			tkframemap,
-	"unmap",		tkframeunmap,
-	"suspend",		tkframesuspend,
+	"cget",			tkframecget,		TK_CMD_NONE,
+	"configure",		tkframeconf,	TK_CMD_NONE,
+	"map",			tkframemap,			TK_CMD_IN,
+	"unmap",		tkframeunmap,		TK_CMD_IN,
+	"suspend",		tkframesuspend,		TK_CMD_IN,
 	nil
 };
 

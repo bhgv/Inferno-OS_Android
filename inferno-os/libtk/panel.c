@@ -389,14 +389,14 @@ tkpanelorigin(Tk *tk, char *arg, char **val)
 static
 TkCmdtab tkpanelcmd[] =
 {
-	"cget",			tkpanelcget,
-	"configure",		tkpanelconf,
-	"dirty",			tkpaneldirty,
-	"origin",			tkpanelorigin,
-	"panelx",			tkpanelpanelx,
-	"panely",			tkpanelpanely,
-	"screenx",			tkpanelscreenx,
-	"screeny",			tkpanelscreeny,
+	"cget",			tkpanelcget,		TK_CMD_NONE,
+	"configure",	tkpanelconf,		TK_CMD_NONE,
+	"dirty",		tkpaneldirty,		TK_CMD_IN,
+	"origin",		tkpanelorigin,		TK_CMD_INOUT,
+	"panelx",		tkpanelpanelx,		TK_CMD_INOUT,
+	"panely",		tkpanelpanely,		TK_CMD_INOUT,
+	"screenx",		tkpanelscreenx,		TK_CMD_INOUT,
+	"screeny",		tkpanelscreeny,		TK_CMD_INOUT,
 	nil
 };
 

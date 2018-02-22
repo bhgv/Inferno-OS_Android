@@ -1252,17 +1252,17 @@ display_open(Display *disp, char *name)
 		
 		int dst_size = -1;
 		
-LOGI("rd png 1 %s ", name);
+//LOGI("rd png 1 %s ", name);
 		if(name[0] == ':'){
 			name++;
 			dst_size = atoi(name);
-LOGI("rd png 2 %d ", dst_size);
+//LOGI("rd png 2 %d ", dst_size);
 			for( ; *name != ':' && *name != '\0'; name++)
 				;
 			if(*name == ':') 
 				name++;
 		}
-LOGI("rd png 3 %s ", name);
+//LOGI("rd png 3 %s ", name);
 		if(name == nil || name[0] == '\0')
 			return nil;
 

@@ -3,6 +3,9 @@
 #include "kernel.h"
 #include "interp.h"
 
+#include "emu.h"
+
+
 int	_drawdebug;
 
 enum {
@@ -84,6 +87,8 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 	q = libqlalloc();
 	if(q == nil)
 		return nil;
+
+printf("\n\n>> %s: %d prog=%p, proc=%p\n", "initdisplay", __LINE__, currun(), up);
 
 	sprint(buf, "%s/draw/new", dev);
 	ctlfd = libopen(buf, ORDWR);

@@ -91,6 +91,7 @@ _allocimage(Image *ai, Display *d, Rectangle r, ulong chan, int repl, ulong val,
 	i->repl = repl;
 	i->screen = 0;
 	i->next = 0;
+	i->fpath = nil;
 	return i;
 }
 
@@ -232,6 +233,8 @@ freeimage(Image *i)
 	int ret;
 
 	ret = _freeimage1(i);
+	if(i && i->fpath)
+		free(i->fpath);
 	free(i);
 	return ret;
 }
