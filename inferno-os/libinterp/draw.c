@@ -10,7 +10,7 @@
 #include "memdraw.h"
 #include "memlayer.h"
 
-
+#include "tk.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -350,10 +350,19 @@ Display_allocate(void *fp)
 	Draw_Rect r;
 	DRef *dr;
 	Cache *c;
+	
+	TkTop *t;
 
 	f = fp;
 	destroy(*f->ret);
 	*f->ret = H;
+
+	t = (currun())->tktop;
+	if(t && t->dd){
+		*f->ret = t->dd;
+		return;
+	}
+	
 	if(cacheqlock == nil){
 		cacheqlock = libqlalloc();
 		if(cacheqlock == nil)

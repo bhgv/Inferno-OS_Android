@@ -7,7 +7,10 @@
 
 #include "draw.h"
 #include "tk.h"
+
 #include "../libtk/canvs.h"
+#include "isa.h"
+#include "../libinterp/runt.h"
 
 //#include <stdbool.h>
 //#define TRUE true
@@ -131,7 +134,7 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 
 		t = p->tktop;
 		
-		if(!t){			
+		if(!t){
 			mkqid(&qid, Qdir, 0, QTDIR);
 			devdir(c, qid, "#G", 0, eve, DMDIR|0555, dp);
 			return 1;
@@ -160,11 +163,11 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 		snprint(up->genbuf, 127, "%s", 
 				tk->name_tail
 				? tk->name_tail
-				: tk->name->name
+				: tkname(tk)
 		);
 		mkqid(&qid, (ulong)n | PATH(c->qid), c->qid.vers, QTDIR);
 		o =  p->osenv;
-		devdir(c, qid, up->genbuf, 0,  o->user, DMDIR|0555, dp);
+		devdir(c, qid, up->genbuf, 0,  o->user, DMDIR|0777, dp);
 		return 1;
 	}
 
@@ -197,7 +200,7 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 			return -1;
 		}
 		mkqid(&qid, pid << QSHIFT, pid, QTDIR);
-		devdir(c, qid, up->genbuf, 0, o->user, DMDIR|0555, dp);
+		devdir(c, qid, up->genbuf, 0, o->user, DMDIR|0777, dp);
 		release();
 		return 1;
 	}
@@ -246,17 +249,17 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 					if( !strcmp(name, 
 							tk2->name_tail
 							? tk2->name_tail
-							: tk2->name->name) 
+							: tkname(tk2) ) 
 					){
 						break;
 					}
 				}
+				if(pr != nil)
+					*pr = '.';
 				if(tk2 == nil){
 					release();
 					return -1;
 				}
-				if(pr != nil)
-					*pr = '.';
 				
 				n = tk2idx(t, tk2);
 				if(n == -1){
@@ -314,15 +317,17 @@ guigen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 		snprint(up->genbuf, 127, "%s.%s", 
 				tk2->name_tail
 				? tk2->name_tail
-				: tk2->name->name,
+				: tkname(tk2),
 				tkmethod[tk2->type]->name
 		);
 		if(name != nil && strcmp(name, up->genbuf) != 0){
 			release();
 			return -1;
 		}
-		mkqid(&qid, (ulong)n | PATH(c->qid), c->qid.vers, (tk2->slave) ? QTDIR : QTFILE);
-		devdir(c, qid, up->genbuf, 0, o->user, (tk2->slave) ? DMDIR|0555 : 0664, dp);
+		if(tk2->slave) 
+			tk2->is_container = 1;
+		mkqid(&qid, (ulong)n | PATH(c->qid), c->qid.vers, (tk2->is_container) ? QTDIR : QTFILE);
+		devdir(c, qid, up->genbuf, 0, o->user, (tk2->is_container) ? DMDIR|0777 : 0664, dp);
 		release();
 		return 1;
 	}else{
@@ -437,6 +442,231 @@ guiclose(Chan *c)
 }
 
 
+void
+guicreate(Chan *c, char *name, int mode, ulong perm)
+{
+	Prog *p;
+	
+	TkTop *t;
+	Tk    *tk;
+
+	char *rt, *type;
+
+	Tk *tk2 = nil;	
+	
+
+	if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
+		error(Efilename);
+	
+	if((ulong)c->qid.path != Qdir) {
+		TkMethod *tkm;
+		int i;
+	
+		type = nil;
+		
+		for(rt = name; *rt != '\0' && *rt != '.'; rt++);
+		if(*rt){
+			*rt = '\0';
+			type = rt+1;
+		}else{
+			rt = nil;
+		}
+		if(type == nil){
+			error(Eperm);
+			return;
+		}
+
+		for(i=0, tkm = nil; i < TKwidgets; i++){
+			tkm = tkmethod[i];
+			if( !strcmp(tkm->name, type) )
+				break;
+		}
+		if(tkm == nil){
+			if(rt)
+				*rt = '.';
+			error(Eperm);
+			return;
+		}
+	
+		acquire();
+		p = progpid(PID(c->qid));
+		if(p == nil) {
+			if(rt)
+				*rt = '.';
+			release();
+			return;
+		}
+		t = p->tktop;
+
+		if(!t){
+			F_Tk_toplevel tf;
+			F_Display_allocate df;
+			//Draw_Display *dd;
+			void *df_ret = H;
+			void *tf_ret = H;
+
+			df.ret = &df_ret;
+			df.dev = H;
+			Display_allocate( &df );
+
+			tf.ret = &tf_ret;
+			tf.d = *df.ret;
+			tf.arg = H;
+			Tk_toplevel( &tf );
+
+			t = *tf.ret;
+			poolimmutable(D2H(t));
+
+			p->tktop = t;
+			t->prog = p;
+			//destroy(df_ret);
+		}
+
+		tk = qid2tk(&c->qid, t);
+		if(tk == nil){
+			if(rt)
+				*rt = '.';
+			error(Eperm);
+			release();
+			return;
+		}
+
+		{
+			char buf[100];
+			char *e, *rv;
+			char *par_tkname = tkname(tk);
+			
+			if(par_tkname){
+				snprint(buf, sizeof(buf), "%s %s%s%s", 
+							type, 
+							par_tkname, 
+							(*par_tkname == '.' && *(char*)(par_tkname+1) == '\0') 
+											? "" 
+											: ".", 
+							name
+				);
+				rv = nil;
+				e = tksinglecmd(t, buf, &rv);
+				if(!e){
+					if(rv){
+						LOGI("AFTER CR %s", rv);
+						free(rv);
+					}
+					
+					snprint(buf, sizeof(buf), "pack %s%s%s -side left",
+								par_tkname, 
+								(*par_tkname == '.' && *(char*)(par_tkname+1) == '\0') 
+												? "" 
+												: ".", 
+								name
+					);
+					e = tksinglecmd(t, buf, nil);
+					if(!e){
+						tksinglecmd(t, "update", nil);
+
+						for( tk2 = tk->slave; tk2; tk2 = tk2->next){
+							if( !strcmp(name, 
+									tk2->name_tail
+									? tk2->name_tail
+									: tkname(tk2) ) 
+							){
+								break;
+							}
+						}
+						if(rt != nil)
+							*rt = '.';
+						if(tk2 == nil){
+							release();
+							return;
+						}
+						if(perm & DMDIR)
+							tk2->is_container = 1;
+					}			
+				}
+			}
+		}
+
+		if(tk2){
+			int n = tk2idx(t, tk2);
+			if(n == -1){
+				release();
+				return;
+			}
+			mkqid(&c->qid, (ulong)n | PATH(c->qid), c->qid.vers, (tk2->is_container) ? QTDIR : QTFILE);
+			c->mode = openmode(mode);
+			c->offset = 0;
+			c->flag |= COPEN;
+		}
+
+		if(rt)
+			*rt = '.';
+		release();
+		return;
+
+		
+//	o = p->osenv;
+//	sprint(up->genbuf, "%lud", pid);
+//	if(name != nil && strcmp(name, up->genbuf) != 0){
+//		release();
+//		return -1;
+//	}
+	}
+}
+
+
+void
+guiremove(Chan *c)
+{
+	Prog *p;
+	
+	TkTop *t;
+	Tk    *tk;
+	Tk *tk2 = nil;	
+
+	char *rt;
+	char *name = c->name->s;
+
+	if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
+		error(Efilename);
+	
+	if((ulong)c->qid.path != Qdir) {
+		acquire();
+		p = progpid(PID(c->qid));
+		if(p == nil) {
+			release();
+			return;
+		}
+		t = p->tktop;
+
+		tk = qid2tk(&c->qid, t);
+		if(tk == nil){
+			release();
+			error(Eperm);
+			return;
+		}
+		else{
+			char buf[100];
+			char *e, *rv;
+			char *par_tkname = tkname(tk);
+			
+			if(par_tkname){
+				snprint(buf, sizeof(buf), "destroy %s", par_tkname );
+				rv = nil;
+				e = tksinglecmd(t, buf, &rv);
+				if(!e){
+					if(rv){
+						free(rv);
+					}
+					tksinglecmd(t, "update", nil);
+				}
+			}
+		}
+	}
+
+	release();
+}
+
+
 static long
 guiread(Chan *c, void *va, long count, vlong offset)
 {
@@ -548,8 +778,8 @@ guiread(Chan *c, void *va, long count, vlong offset)
 				for(j = 0; cmd[j].name != nil; j++){
 					if(cmd[j].flag == TK_CMD_OUT){
 						char *e;
+
 						rv = nil;
-					
 						e = cmd[j].fn(tk2, "", &rv);
 						if(!e)
 							i += snprint(va2+i, count-i, "\"%s %s\"\n", cmd[j].name, rv);
@@ -560,12 +790,6 @@ guiread(Chan *c, void *va, long count, vlong offset)
 			}
 			
 //			i += snprint(va2+i, count-i, "# tk %#p; \nflag=%#ux; \ngrid=%#p; \n", tk2, tk2->flag, tk2->grid);
-			
-//			if(tk2->parent != nil)
-//				i += snprint(va2+i, count-i, "parent=[%#p %q];\n", tk2->parent, tkname(tk2->parent));
-			
-//			if(tk2->master != nil)
-//				i += snprint(va2+i, count-i, "master=[%#p %q];\n", tk2->master, tkname(tk2->master));
 
 			if(tk2->slave != nil){
 				Tk *sl;
@@ -734,8 +958,8 @@ guiwrite(Chan *c, void *va, long count, vlong offset)
 				
 				snprint(buf, blen, "%s %s", tknm, arg);
 
-				tksinglecmd(t, buf, &rv);
-
+				if( !tksinglecmd(t, buf, &rv) )
+					tksinglecmd(t, "update", nil);
 				free(buf);
 
 				if(rv != nil){
@@ -785,8 +1009,9 @@ guiwstat(Chan *c, uchar *db, int n)
 	char *u;
 	Osenv *o;
 
-	if(c->qid.type&QTDIR)
+	if(c->qid.type & QTDIR)
 		error(Eperm);
+	
 	acquire();
 	p = progpid(PID(c->qid));
 	if(p == nil) {
@@ -860,13 +1085,13 @@ Dev guidevtab = {
         guiwalk,
         guistat,
         guiopen,
-        devcreate,
+        guicreate,
         guiclose,
         guiread,
         devbread,
         guiwrite,
         devbwrite,
-        devremove,
+        guiremove,
         guiwstat
 };
 

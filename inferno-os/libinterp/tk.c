@@ -96,6 +96,14 @@ Tk_toplevel(void *a)
 	r = *f->ret;
 	*f->ret = H;
 	destroy(r);
+
+	t = (currun())->tktop;
+	if(t){
+		poolmutable(D2H(t));
+		*f->ret = (Tk_Toplevel*)t;
+		return;
+	}
+	
 	disp = checkdisplay(f->d);
 
 	h = heapz(fakeTkTop);
@@ -149,7 +157,11 @@ Tk_toplevel(void *a)
 	poolmutable(h);
 	t->wreq = cnewc(&Tptr, movp, 8);
 
-	(currun())->tktop = t;
+	{
+		Prog *p = currun();
+		p->tktop = t;
+		t->prog = p;
+	}
 	
 	*f->ret = (Tk_Toplevel*)t;
 }
@@ -1043,6 +1055,11 @@ tkfreetop(Heap *h, int swept)
 		r = t->wmctxt;
 		t->wmctxt = H;
 		destroy(r);
+	}
+	if(t->prog){
+		Prog* p = t->prog;
+		t->prog = nil;
+		p->tktop = nil;
 	}
 }
 

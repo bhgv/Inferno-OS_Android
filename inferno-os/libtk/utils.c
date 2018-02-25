@@ -744,6 +744,7 @@ tkaddchild(TkTop *t, Tk *tk, TkName **names)
 		}
 	}
 	tk->name_tail = (*ep == '.') ? ep+1 : ep;
+	tk->is_container = 0;
 
 	*l = tk;
 	tk->name = n;

@@ -484,6 +484,7 @@ struct Tk
 	TkGrid*	grid;		/* children are packed in a grid */
 
 	char *name_tail;
+	int  is_container;
 
 	/* followed by widget-dependent data */
 };
@@ -601,6 +602,8 @@ struct TkTop
 	char*	err;
 	char		errcmd[32];
 	char		errx[32];
+
+	void*	prog;
 };
 
 #define TKobj(t, p)	((t*)((p)+1))
