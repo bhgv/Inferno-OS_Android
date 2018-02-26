@@ -66,6 +66,16 @@ rslt_string *root_rslt_strings = nil;
 extern char rootdir[];
 
 
+#if 0
+struct DDisplay
+{
+	Draw_Display	drawdisplay;
+	Display*	display;
+	/*DRef*/ void*		dref;
+};
+#endif
+
+
 void guictl_wr_pars(char* in, int count);
 
 
@@ -499,13 +509,18 @@ guicreate(Chan *c, char *name, int mode, ulong perm)
 		t = p->tktop;
 
 		if(!t){
+			Draw_Display *dd = H;
+			
 			F_Tk_toplevel tf;
 			F_Display_allocate df;
-			//Draw_Display *dd;
-			void *df_ret = H;
-			void *tf_ret = H;
+			F_Tk_putimage pif;
 
-			df.ret = &df_ret;
+			void *tf_ret = H;
+			void *pi_ret = H;
+
+			char *ts;
+
+			df.ret = &dd;
 			df.dev = H;
 			Display_allocate( &df );
 
@@ -517,8 +532,119 @@ guicreate(Chan *c, char *name, int mode, ulong perm)
 			t = *tf.ret;
 			poolimmutable(D2H(t));
 
+#if 0   // ?? need to configure wmctxt before 
+			{
+				Draw_Wmcontext *wmctxt = t->wmctxt;
+				Sys_FD *connfd = nil;
+				
+				Array *a;
+				void *w;
+				
+				if(wmctxt) 
+					connfd = wmctxt->connfd;
+				
+				if(connfd != nil){
+					Channel *c;
+					
+					if(fprint(connfd->fd, "!reshape . -1 0 0 50 40 place") == -1)
+						return "err!"; //sprint("%r");
+					
+					//recvimage(top, name, reqid);
+					/*
+					i := <-top.ctxt.images;
+					if(i == nil){
+					        cmd(top, name + " suspend");
+					        i = <-top.ctxt.images;
+					}
+					tk->putimage(top, name+" "+reqid, i, nil);
+					*/
+
+					c = wmctxt->images;
+
+					// VVV read from Channel
+					if((a = c->buf) != H)
+						//return 0;
+					//else
+					if(c->size > 0){
+						w = a->data+c->front*a->t->size;
+						c->front++;
+						if(c->front == c->buf->len)
+							c->front = 0;
+						c->size--;
+						//R.s = w;
+						//R.m = &c->mid;
+						//R.d = v;
+						c->mover();
+						if(a->t->np){
+							freeptrs(w, a->t);
+							initmem(a->t, w);
+						}
+						if(w)
+							t->di = *(void**)w;
+					}
+					// AAA write to Channel
+					//return nil;
+				}
+			}
+#endif
+			/*
+			if(top.image == nil){
+					di := top.display.image;
+					screen := Screen.allocate(di, top.display.color(Background), 0);
+					di.draw(di.r, screen.fill, nil, screen.fill.r.min);
+					i = screen.newwindow(di.r, Draw->Refbackup, Draw->Nofill);
+			}else{
+					if(name == ".")
+							i = top.image;
+					else
+							i = top.image.screen.newwindow(s2r(req, e).t0, Draw->Refbackup, Draw->Red);
+			}
+			tk->putimage(top, name+" "+reqid, i, nil);
+			*/
+			if(t->di == H){
+				Draw_Image *di = dd->image;
+				Draw_Screen *ds = H;
+
+				F_Screen_allocate	saf;
+				F_Image_draw		idf;
+				F_Screen_newwindow	snwf;
+
+				saf.ret = &ds;
+				saf.public = 0;
+				saf.image = di;
+				saf.fill = dd->opaque;
+				Screen_allocate( &saf );
+
+				idf.dst = di;
+				idf.r = di->r;
+				idf.src = ds->fill;
+				idf.matte = H;
+				idf.p = ds->fill->r.min;
+				Image_draw( &idf );
+
+				snwf.ret = &t->di;
+				snwf.screen = ds;
+				snwf.r = di->r;
+				snwf.backing = 1;
+				snwf.color = 0x0000ff;
+				Screen_newwindow( &snwf );
+			}else{
+			}
+
+			pif.ret = &pi_ret;
+			pif.i = t->di;
+			pif.t = t;
+			pif.m = H;
+			ts = ". -1";
+			pif.name = c2string(ts, strlen(ts));
+			Tk_putimage( &pif );
+			
 			p->tktop = t;
 			t->prog = p;
+
+//			libqunlock(
+//				((struct DDisplay*)dd)->display->qlock
+//			);
 			//destroy(df_ret);
 		}
 
@@ -958,8 +1084,10 @@ guiwrite(Chan *c, void *va, long count, vlong offset)
 				
 				snprint(buf, blen, "%s %s", tknm, arg);
 
-				if( !tksinglecmd(t, buf, &rv) )
-					tksinglecmd(t, "update", nil);
+//				if( !
+					tksinglecmd(t, buf, &rv);
+//				)
+//					tksinglecmd(t, "update", nil);
 				free(buf);
 
 				if(rv != nil){
@@ -970,6 +1098,7 @@ guiwrite(Chan *c, void *va, long count, vlong offset)
 					rvs[j] = nil;
 				}
 			}
+			tksinglecmd(t, "update -onscreen", nil);
 
 			r = malloc(sizeof(rslt_string) + rl + 2);
 
