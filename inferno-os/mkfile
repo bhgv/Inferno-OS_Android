@@ -12,8 +12,8 @@ EMUDIRS=\
 	libmp\
 	libsec\
 	libmath\
-	utils/iyacc\
-	limbo\
+#	utils/iyacc\
+#	limbo\
 	libinterp\
 	libkeyring\
 	libdraw\
@@ -24,8 +24,8 @@ EMUDIRS=\
 	libmemlayer\
 	libdynld\
 	liblodepng\
-	utils/data2c\
-	utils/ndate\
+#	utils/data2c\
+#	utils/ndate\
 	emu\
 
 KERNEL_DIRS=\

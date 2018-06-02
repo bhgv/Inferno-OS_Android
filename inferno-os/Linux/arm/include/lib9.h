@@ -1,3 +1,7 @@
+#ifndef _LIB9_H
+#define _LIB9_H
+
+
 /* define _BSD_SOURCE to use ISO C, POSIX, and 4.3BSD things. */
 #define	USE_PTHREADS
 #ifndef _DEFAULT_SOURCE
@@ -502,3 +506,6 @@ extern	ulong	getfsr(void);
 #define	FPAUNFL	FPUNFL
 #define	FPAZDIV	FPZDIV
 #define	FPAINVAL	FPINVAL
+
+
+#endif

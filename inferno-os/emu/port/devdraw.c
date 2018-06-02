@@ -8,6 +8,11 @@
 #include	<cursor.h>
 //#include	"screen.h"
 
+#include "emu.h"
+#include "interp.h"
+
+
+
 enum
 {
 	Qtopdir		= 0,
@@ -922,6 +927,8 @@ drawopen(Chan *c, int omode)
 {
 	Client *cl;
 
+//print("<< %s: %d prog=%p, proc=%p, qid=%d\n", "drawopen", __LINE__, currun(), up, QID(c->qid));
+	
 	if(c->qid.type & QTDIR)
 		return devopen(c, omode, 0, 0, drawgen);
 
@@ -1029,6 +1036,9 @@ drawread(Chan *c, void *a, long n, vlong off)
 	ulong offset = off;
 	char buf[16];
 
+		
+//print("<< %s: %d prog=%p, proc=%p, qid=%d\n", "drawread", __LINE__, currun(), up, QID(c->qid));
+		
 	USED(offset);
 	if(c->qid.type & QTDIR)
 		return devdirread(c, a, n, 0, 0, drawgen);
@@ -1146,6 +1156,9 @@ drawwrite(Chan *c, void *a, long n, vlong off)
 	int i, m, red, green, blue, x;
 	ulong offset = off;
 
+
+//print("<< %s: %d prog=%p, proc=%p, qid=%d\n", "drawwrite", __LINE__, currun(), up, QID(c->qid));
+
 	USED(offset);
 	if(c->qid.type & QTDIR)
 		error(Eisdir);
@@ -1247,11 +1260,13 @@ printmesg(char *fmt, uchar *a, int plsprnt)
 	char *p, *q;
 	int s;
 
+#if 1
 	if(1|| plsprnt==0){
 		SET(s); SET(q); SET(p);
 		USED(fmt); USED(a); USED(buf); USED(p); USED(q); USED(s);
 		return;
 	}
+#endif
 	q = buf;
 	*q++ = *a++;
 	for(p=fmt; *p; p++){
@@ -1433,6 +1448,26 @@ drawmesg(Client *client, void *av, int n)
 			if(a[5])
 				dst->flags |= Frepl;
 			drawrectangle(&dst->clipr, a+6);
+			continue;
+			
+		/* attach to ext win: 'W' dstid[4] */
+		case 'W':
+			printmesg(fmt="L", a, 0);
+			m = 1+4;
+			if(n < m)
+				error(Eshortdraw);
+			dst = drawimage(client, a+1);
+			r = dst->r;
+			//op = drawclientop(client);
+			//memdraw(dst, r, src, p, mask, q, op);
+			//dstflush(dst, r);
+#ifdef clutter
+			if(dst->data && !dst->ext_win)
+				dst->ext_win = attach_clutter_actor(dst->data->bdata, 
+														r.min.x, r.min.y, 
+														r.max.x, r.max.y);
+printf("clutter new window\n");
+#endif
 			continue;
 
 		/* draw: 'd' dstid[4] srcid[4] maskid[4] R[4*4] P[2*4] P[2*4] */

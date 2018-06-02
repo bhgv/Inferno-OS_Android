@@ -1,0 +1,8 @@
+<../mkconfig
+
+LIB=libcalltrace.a
+OFILES=\
+	calltrace2.$O\
+
+
+<$ROOT/mkfiles/mksyslib-$SHELLTYPE

@@ -91,12 +91,16 @@ if(drawdebug)	iprint("drawclip dstcr %R srccr %R maskcr %R\n", dst->clipr, src->
 	}
     Clearlayer:
 	if(dl!=nil && dl->clear){
+		void *ext_win;
+
 		if(src == dst){
 			p0.x += dl->delta.x;
 			p0.y += dl->delta.y;
 			src = dl->screen->image;
 		}
+		ext_win = dst->ext_win;
 		dst = dl->screen->image;
+		dst->ext_win = ext_win;
 		goto Top;
 	}
 

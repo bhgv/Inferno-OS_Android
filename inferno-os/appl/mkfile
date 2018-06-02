@@ -2,7 +2,7 @@
 
 DIRS=\
 	acme\
-#	alphabet\
+	alphabet\
 	charon\
 	cmd\
 	collab\

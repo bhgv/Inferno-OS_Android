@@ -20,12 +20,13 @@
 #define __FREETYPE_H__
 #pragma incomplete _off_	/* it's too hard */
 
+#ifdef ANDROID
 typedef unsigned int size_t;
 //typedef unsigned short wchar_t;
 typedef signed int ptrdiff_t;
 
 //#define NULL ((void*)0)
-
+#endif
 
   /*************************************************************************/
   /*                                                                       */

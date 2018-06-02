@@ -25,7 +25,7 @@ CFLAGS=		-O\
 		-DLINUX_ARM\
 		-D__arm__\
 		-D__ANDROID_API__=17 -DANDROID\
-		-ffunction-sections -funwind-tables -fstack-protector-strong\
+		-ffunction-sections -funwind-tables \
 		-no-canonical-prefixes -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16\
 		-marm -Wa,--noexecstack -Wformat -Werror=format-security  -std=c99\
 		--sysroot=$ROOT/ndk_toolchain/sysroot 
@@ -33,6 +33,7 @@ CFLAGS=		-O\
 #-static
 #		-g -finstrument-functions\
 #		-g -funwind-tables\
+#		-fstack-protector-strong\
 
 
 ANSICPP=

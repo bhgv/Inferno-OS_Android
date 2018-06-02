@@ -1170,6 +1170,8 @@ tkputwinimage(Tk *tk, Draw_Image *di, int reqid)
 	if(reqid != -1 && reqid < tkw->reqid)
 		return "!request out of date";
 
+//	attachtowindow(i);
+
 	bw2 = 2*tk->borderwidth;
 	req.min.x = tkw->req.x;
 	req.min.y = tkw->req.y;

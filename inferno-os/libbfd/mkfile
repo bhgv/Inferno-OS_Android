@@ -1,0 +1,52 @@
+<../mkconfig
+
+LIB=libbfd.a
+OFILES=\
+	elf-attrs.$O\
+	elflink.$O\
+	plugin.$O\
+	elf-eh-frame.$O\
+	ptrace-core.$O\
+	elf-ifunc.$O\
+	reloc.$O\
+	compress.$O\
+	elf-nacl.$O\
+	format.$O\
+	reloc16.$O\
+	archive.$O\
+	corefile.$O\
+	elf-strtab.$O\
+	section.$O\
+	elf.$O\
+	hash.$O\
+	simple.$O\
+	archures.$O\
+	cpu-arm.$O\
+	elf32-arm.$O\
+	srec.$O\
+	bfd.$O\
+	elf32-dlx.$O\
+	stab-syms.$O\
+	bfdio.$O\
+	elf32-gen.$O\
+	stabs.$O\
+	binary.$O\
+	cpu-plugin.$O\
+	init.$O\
+	syms.$O\
+	cache.$O\
+	elf32-metag.$O\
+	libbfd.$O\
+	targets.$O\
+	demo64.$O\
+	linker.$O\
+	trad-core.$O\
+	dwarf1.$O\
+	elf32.$O\
+	merge.$O\
+	xsym.$O\
+	dwarf2.$O\
+	mmo.$O\
+	opncls.$O\
+
+<$ROOT/mkfiles/mksyslib-$SHELLTYPE

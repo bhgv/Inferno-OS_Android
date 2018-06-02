@@ -4,17 +4,19 @@
 #	They are almost always the same.
 
 #	On Nt systems, the ROOT path MUST be of the form `drive:/path'
-ROOT=$PWD
+ROOT=$ROOT
 
 #
 #	Specify the flavour of Tk (std for standard builds)
 #
 TKSTYLE=std
 
+WINDOW_BACKEND=andr		# andr, clutter
+
 #
 #	Except for building kernels, SYSTARG must always be the same as SYSHOST
 #
-SYSHOST=Nt  #Plan9		# build system OS type (Hp, Inferno, Irix, Linux, MacOSX, Nt, Plan9, Solaris)
+SYSHOST=Linux #Nt  #Plan9		# build system OS type (Hp, Inferno, Irix, Linux, MacOSX, Nt, Plan9, Solaris)
 SYSTARG=Android #Linux  #$SYSHOST		# target system OS type (Hp, Inferno, Irix, Linux, Nt, Plan9, Solaris)
 
 #

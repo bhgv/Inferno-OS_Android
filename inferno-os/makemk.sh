@@ -8,8 +8,8 @@
 
 # change these defines as appropriate here or in mkconfig
 # ROOT should be the root of the Inferno tree
-ROOT=/usr/inferno
-SYSTARG=FreeBSD
+ROOT=$PWD  #/usr/inferno
+SYSTARG=Linux  #FreeBSD
 OBJTYPE=386
 SYSTYPE=posix
 

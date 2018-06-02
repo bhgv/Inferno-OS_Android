@@ -7,6 +7,10 @@
 /*
  * This structure must agree with FPsave and FPrestore asm routines
  */
+
+#ifndef _EMU_H
+#define _EMU_H
+
 typedef struct FPU FPU;
 struct FPU
 {
@@ -31,3 +35,5 @@ extern	Proc*	getup(void);
 
 typedef sigjmp_buf osjmpbuf;
 #define	ossetjmp(buf)	sigsetjmp(buf, 1)
+
+#endif

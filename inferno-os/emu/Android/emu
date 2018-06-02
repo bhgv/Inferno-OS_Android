@@ -14,7 +14,7 @@ dev
 	cmd	cmd
 	indir
 
-	draw	win-andr
+	draw	win-$WINDOW_BACKEND
 	pointer
 
 	ip	ipif6-posix ipaux

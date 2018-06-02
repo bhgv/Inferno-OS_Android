@@ -103,7 +103,10 @@ freescreen(Screen *s)
 Image*
 allocwindow(Screen *s, Rectangle r, int ref, ulong val)
 {
-	return _allocwindow(nil, s, r, ref, val);
+	Image *i = _allocwindow(nil, s, r, ref, val);
+	if(i)
+		attachtowindow(i);
+	return i;
 }
 
 Image*

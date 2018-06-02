@@ -2,6 +2,52 @@
 #include "draw.h"
 #include "kernel.h"
 
+
+void
+attachtowindow(Image *i)
+{
+	uchar *a;
+	char *err;
+//	Image *i;
+	Rectangle r;
+	int id;
+	Display *d;
+
+	err = 0;
+
+	if(i == nil){
+		err = "bad image descriptor";
+    Error:
+		if(err)
+			kwerrstr("attachtowindow: %s", err);
+		else
+			kwerrstr("attachtowindow: %r");
+		return;
+	}
+	d = i->display;
+
+	/* flush pending data so we don't get error allocating the image */
+	flushimage(d, 0);
+	a = bufimage(d, 1+4);
+	if(a == 0)
+		goto Error;
+	
+	id = i->id;
+	r = i->r;
+	
+	a[0] = 'W';
+	BPLONG(a+1, id);
+//	BPLONG(a+5, screenid);
+//	BPLONG(a+15, r.min.x);
+//	BPLONG(a+19, r.min.y);
+//	BPLONG(a+23, r.max.x);
+//	BPLONG(a+27, r.max.y);
+
+	if(flushimage(d, 0) < 0)
+		goto Error;
+}
+
+
 Image*
 allocimage(Display *d, Rectangle r, ulong chan, int repl, ulong val)
 {

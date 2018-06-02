@@ -53,6 +53,8 @@ struct Memimage
 	int		shift[NChan];
 	int		mask[NChan];
 	int		nbits[NChan];
+
+	void *ext_win;
 };
 
 struct Memcmap

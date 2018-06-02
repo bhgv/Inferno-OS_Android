@@ -2,7 +2,7 @@
 #include <bio.h>
 #include <ctype.h>
 
-#ifdef ANDROID
+//#ifdef ANDROID
 #undef malloc
 #undef free
 
@@ -13,7 +13,7 @@ void* malloc_(size_t l){
 void free_(void* p) {
 	free(p);
 }
-#endif
+//#endif
 
 #define	Bungetrune	Bungetc		/* ok for now. */
 

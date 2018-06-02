@@ -6,6 +6,7 @@
 #include	"draw.h"
 #include	"version.h"
 
+#include <stdio.h>
 	
 #include <android/log.h>
 	
@@ -27,8 +28,8 @@ extern	int	mflag;
 	int vflag = 0;
 	Procs	procs;
 	char	*eve;
-	extern int	Xsize; // = 640; //	= 640;
-	extern int	Ysize; // = 480; //	= 480;
+extern	int	Xsize; // = 640; //	= 640;
+extern	int	Ysize; // = 480; //	= 480;
 	int	bflag = 1;
 	int	sflag = 0;
 	int	qflag = 0;

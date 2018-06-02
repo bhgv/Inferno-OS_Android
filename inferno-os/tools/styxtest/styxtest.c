@@ -1,7 +1,7 @@
 #include <lib9.h>
 #include "styxserver.h"
 
-#ifdef ANDROID
+//#ifdef ANDROID
 #undef malloc
 #undef free
 #undef realloc
@@ -17,7 +17,7 @@ void* realloc_(void*p, size_t l){
 void free_(void* p) {
 	free(p);
 }
-#endif
+//#endif
 
 
 /*

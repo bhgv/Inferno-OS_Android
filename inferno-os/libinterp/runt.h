@@ -3097,7 +3097,7 @@ struct F_Math_yn
 #define Math_NaN NaN
 #define Math_MachEps 2.220446049250313e-16
 #define Math_Pi 3.141592653589793
-#define Math_Degree .017453292519943295
+#define Math_Degree .017453292519943292
 #define Math_INVAL 1
 #define Math_ZDIV 2
 #define Math_OVFL 4

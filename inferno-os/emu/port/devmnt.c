@@ -148,14 +148,16 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 	f.tag = NOTAG;
 	f.msize = msize;
 	f.version = v;
-	msg = malloc(8192+IOHDRSZ);
+//	msg = malloc(8192+IOHDRSZ);
+	msg = malloc(msize);
 	if(msg == nil)
 		exhausted("version memory");
 	if(waserror()){
 		free(msg);
 		nexterror();
 	}
-	k = convS2M(&f, msg, 8192+IOHDRSZ);
+//	k = convS2M(&f, msg, 8192+IOHDRSZ);
+	k = convS2M(&f, msg, msize);
 	if(k == 0)
 		error("bad fversion conversion on send");
 
@@ -174,7 +176,8 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 	}
 
 	/* message sent; receive and decode reply */
-	k = devtab[c->type]->read(c, msg, 8192+IOHDRSZ, c->offset);
+//	k = devtab[c->type]->read(c, msg, 8192+IOHDRSZ, c->offset);
+	k = devtab[c->type]->read(c, msg, msize, c->offset);
 	if(k <= 0)
 		error("EOF receiving fversion reply");
 
@@ -192,7 +195,7 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 	}
 	if(f.msize > msize)
 		error("server tries to increase msize in fversion");
-	if(f.msize<256 || f.msize>1024*1024)
+	if(f.msize<256 || f.msize>5*1024*1024)
 		error("nonsense value of msize in fversion");
 	if(strncmp(f.version, v, strlen(f.version)) != 0)
 		error("bad 9P version returned from server");
