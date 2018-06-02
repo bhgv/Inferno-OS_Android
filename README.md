@@ -1,5 +1,13 @@
 # Inferno-OS_Android
 
+## Changes
+* `inferno-os` tree was replaced with the repo `Inferno-OS-bhgv`. use:
+```
+git clone --recursive https://github.com/bhgv/Inferno-OS_Android
+```
+(if you need old inferno-os tree [you may get it here](https://github.com/bhgv/Inferno-OS_Android/releases/tag/old_inferno-os_tree) )
+
+
 ![Screenshot](doku/screenshot.jpg)
 
 for Android > v4.0 (api 14)
