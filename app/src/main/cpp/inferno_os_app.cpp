@@ -2,6 +2,8 @@
 #include <cstdio>
 #include "inferno_storage.h"
 #include <cassert>
+#include <cstdlib>
+#include <climits>
 
 #include <android/window.h>
 #include <android/native_activity.h>
@@ -47,6 +49,27 @@ extern "C" {
 	extern void xmouse_btn(int x, int y, int btn);
 	extern void xexpose();
 }
+
+extern "C" void __real_libinit(void *imod);
+
+
+/* Allocate only after amain has parsed -g and before Inferno starts its workers. */
+extern "C" void
+__wrap_libinit(void *imod)
+{
+    Xsize &= ~3;
+    if(xscreendata != NULL || Xsize <= 0 || Ysize <= 0 || Xsize > INT_MAX/4/Ysize){
+        __android_log_print(ANDROID_LOG_ERROR, "Inferno Screen", "Invalid logical screen dimensions");
+        return;
+    }
+    xscreendata = static_cast<unsigned char*>(calloc(static_cast<size_t>(Xsize)*Ysize,4));
+    if(xscreendata == NULL){
+        __android_log_print(ANDROID_LOG_ERROR, "Inferno Screen", "Cannot allocate logical screen");
+        return;
+    }
+    __real_libinit(imod);
+}
+
 
 
 extern "C" {
@@ -306,7 +329,7 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
                                 "Cannot access /sdcard/Inferno; check shared-storage permissions");
                         break;
                     }
-					xscreendata = new unsigned char[Xsize * Ysize * 4];
+
 
 LOGE("create pre amain");
 					amain();

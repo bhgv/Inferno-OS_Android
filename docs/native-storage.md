@@ -56,3 +56,10 @@ and unsupported ABI rejection. Set CMAKE to the desired executable if needed.
 extraction, preserving existing files, failed-copy cleanup, retry, invalid paths
 and disabling generated assets. A host asset adapter and remapped shared mount
 stand in for Android APIs; no device permission behavior is certified.
+
+The framebuffer startup entry now uses --wrap=libinit to allocate the logical
+screen after amain parses -g. Width alignment and allocation bounds are checked
+before starting interpreter workers. The old permissive multiple-definition
+and LTO link flags are removed. tests/framebuffer-startup.py exercises the
+actual wrapper through a separate archive at O3/NDEBUG with strict UBSan.
+The 2026-10-31 APK provenance and hashes are in apk-test-20261031.md.

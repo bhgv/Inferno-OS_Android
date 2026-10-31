@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 
 DIRECTORIES = ('dis', 'lib', 'fonts', 'icons')
+OPTIONAL = ('acme', 'locale', 'man', 'module', 'services', 'usr/inferno')
 EMPTY = ('chan', 'dev', 'env', 'fd', 'mnt', 'net', 'prog', 'srv', 'tmp', 'usr', 'usr/inferno')
 
 
@@ -28,7 +29,7 @@ def main():
         raise RuntimeError('Place generated assets outside the Inferno source tree')
     directories = set(EMPTY)
     files = []
-    for name in DIRECTORIES+tuple(name for name in ('usr/inferno',) if (source/name).is_dir()):
+    for name in DIRECTORIES+tuple(name for name in OPTIONAL if (source/name).is_dir()):
         tree = source/name
         if not tree.is_dir():
             raise RuntimeError('Required runtime directory is missing: '+str(tree))
