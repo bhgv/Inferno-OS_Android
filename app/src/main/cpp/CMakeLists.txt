@@ -9,7 +9,17 @@ get_filename_component(INFERNO_OS_PROJ_DIR
 
 
 # configure import libs
-set(infrlib_DIR ${INFERNO_OS_PROJ_DIR}/inferno-os/Android/arm/lib)
+set(INFERNO_ROOT "${INFERNO_OS_PROJ_DIR}/inferno-os" CACHE PATH "Inferno source and built libraries")
+if(ANDROID_ABI STREQUAL "armeabi-v7a")
+    set(INFERNO_OBJTYPE arm)
+elseif(ANDROID_ABI STREQUAL "arm64-v8a")
+    set(INFERNO_OBJTYPE arm64)
+elseif(ANDROID_ABI STREQUAL "x86_64")
+    set(INFERNO_OBJTYPE amd64)
+else()
+    message(FATAL_ERROR "Unsupported Inferno ABI: ${ANDROID_ABI}")
+endif()
+set(infrlib_DIR "${INFERNO_ROOT}/Android/${INFERNO_OBJTYPE}/lib")
 
 add_library(emu STATIC IMPORTED)
 set_target_properties(emu PROPERTIES IMPORTED_LOCATION
@@ -93,7 +103,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fPIC -fPIE")
 # Export ANativeActivity_onCreate(),
 # Refer to: https://github.com/android-ndk/ndk/issues/381.
 set(CMAKE_SHARED_LINKER_FLAGS
-    "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate -fPIC -fPIE -Wl,--allow-multiple-definition -flto -L${infrlib_DIR}"
+    "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate -fPIC -fPIE -Wl,--allow-multiple-definition -flto"
 )
 
 
@@ -102,6 +112,7 @@ add_library(native-audio STATIC native-audio.c)
 
 add_library(inferno_os_app SHARED
     inferno_os_app.cpp
+    inferno_storage.c
 )
 
 

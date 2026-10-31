@@ -1,5 +1,6 @@
 
 #include <cstdio>
+#include "inferno_storage.h"
 #include <cassert>
 
 #include <android/window.h>
@@ -287,7 +288,10 @@ void ioa_showsplash(){
 } // extern "C"
 
 
-static void ProcessAndroidCmd(struct android_app *app, int32_t cmd) {
+/* Prepare the app-private filesystem before the first emulator startup. */
+static void
+ProcessAndroidCmd(struct android_app *app, int32_t cmd)
+{
     static int32_t format = WINDOW_FORMAT_RGB_565;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
     switch (cmd) {
@@ -297,6 +301,12 @@ static void ProcessAndroidCmd(struct android_app *app, int32_t cmd) {
 				Ysize = ANativeWindow_getHeight(app->window);
 
 				if(xscreendata == NULL){
+                    if(ioa_prepare_storage(app->activity->internalDataPath,
+                            app->activity->assetManager) != 0){
+                        __android_log_print(ANDROID_LOG_ERROR, "Inferno Storage",
+                                "Cannot prepare app-private Inferno filesystem");
+                        break;
+                    }
 					xscreendata = new unsigned char[Xsize * Ysize * 4];
 
 LOGE("create pre amain");

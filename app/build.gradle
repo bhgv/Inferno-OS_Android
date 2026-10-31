@@ -6,12 +6,13 @@ android {
         applicationId 'bhgv.vitanuova.inferno_os'
         minSdkVersion 14
         targetSdkVersion 17
-        ndk.abiFilters 'armeabi-v7a'
+        ndk.abiFilters(*((project.findProperty('infernoAbis') ?: 'armeabi-v7a').split(',')))
 
         externalNativeBuild {
             cmake {
                 arguments '-DANDROID_ARM_MODE=arm',
-                        '-DANDROID_TOOLCHAIN=gcc',
+                        '-DANDROID_TOOLCHAIN=clang',
+                        '-DINFERNO_ROOT=' + (project.findProperty('infernoRoot') ?: rootProject.file('inferno-os').absolutePath),
                         '-DANDROID_STL=c++_static'
             }
         }
@@ -34,3 +35,13 @@ android {
 
 dependencies {
 }
+
+// Stage filesystem data for native extraction; no application Java source is introduced.
+android.sourceSets.main.assets.srcDir "$buildDir/generated/infernoAssets"
+task stageInfernoAssets(type: Exec) {
+    commandLine (project.findProperty('infernoPython') ?: 'python3'),
+            rootProject.file('tools/stage-inferno.py').absolutePath,
+            '--source', (project.findProperty('infernoRoot') ?: rootProject.file('inferno-os').absolutePath),
+            '--output', "$buildDir/generated/infernoAssets/inferno"
+}
+preBuild.dependsOn stageInfernoAssets
