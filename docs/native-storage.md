@@ -1,63 +1,58 @@
-# Native storage and Inferno library selection
+# Shared Inferno tree and native library selection
 
-All new runtime code is C/C++. No application Java source or JNI call is added.
-The existing NativeActivity launch callback supplies internalDataPath and
-AAssetManager before amain. ioa_prepare_storage creates its Inferno child,
-deploys missing bundled files, then sets INFERNO_FILES_DIR. It also redirects
-EXTERNAL_STORAGE inside this process for compatibility with the older bundled
-amain, which otherwise appends /Inferno to that variable.
+Runtime files are used exclusively from `/sdcard/Inferno`. By default the APK
+contains no runtime tree: populate this existing shared directory yourself,
+including dis/emuinit.dis. There is no internal-directory fallback. Private trees
+created by the withdrawn installer are neither migrated nor deleted automatically.
 
-The system-provided private directory is accessible to this app without shared
-storage permission, including scoped-storage Android versions. It is not a
-public folder for arbitrary file managers; Android may remove it on uninstall.
-No /sdcard access bypass, hidden platform API or all-files permission is used.
+Optional provisioning is enabled with:
 
-The Android-specific launch and APK packaging stay in this repository. The
-cross-platform Inferno repository supplies the native resolver in emu/Android.
-Its C directory API is available to other native launchers; activity/asset APIs
-remain in this APK repository. The environment bridge also supports the older
-bundled Inferno tree.
+```
+./gradlew -PinfernoBundleRuntime=true -PinfernoRoot=/path/to/Inferno-OS-bhgv assembleDebug
+```
+
+This stages compiled runtime assets into the APK and enables native extraction
+directly into `/sdcard/Inferno` before startup. Only missing files are written;
+existing files, including user edits, are preserved. Interrupted installation
+can be retried. Switching the option off removes generated runtime assets from
+the next APK. Runtime execution always uses the shared directory, never assets
+or a private copy. The option is a build-time choice, default false.
+
+Native startup verifies that the shared directory is readable, writable and
+searchable. For the older bundled amain it sets EXTERNAL_STORAGE to /sdcard
+inside the process. It does not supply INFERNO_FILES_DIR or use NativeActivity's
+internalDataPath. If access is unavailable, startup reports an explicit error.
+The launcher must have the shared-storage permissions allowed by the device's
+Android policy; this change does not guarantee access on every Android release.
+No Java source or new JNI call is introduced.
 
 ## Build inputs
 
-Build Inferno libraries and Limbo runtime programs before assembling the APK.
-In particular, dis/emuinit.dis must exist. The staging script packages dis, lib,
-fonts, icons and the default usr/inferno tree, plus required empty mount points.
-It excludes host toolchains, source/compiler directories and native archives.
+Build Inferno's native archives before assembling the APK:
 
 ```
-python3 tools/stage-inferno.py --source /path/to/Inferno-OS-bhgv --output /path/to/generated/inferno
 ./gradlew -PinfernoRoot=/path/to/Inferno-OS-bhgv assembleDebug
 ```
-
-Gradle automatically stages data into build/generated/infernoAssets before the
-APK build. infernoPython selects the Python executable (default python3).
-The manifest preserves parent-first directory creation and bounds native input.
-Incomplete file writes use a temporary file and are retried on the next launch.
-Existing files are never overwritten, including startup configuration and user
-edits. Runtime updates therefore require deliberately backing up and refreshing
-the private root; this is not a general automatic migration service.
 
 CMake maps armeabi-v7a to Android/arm/lib, arm64-v8a to Android/arm64/lib and
 x86_64 to Android/amd64/lib. infernoRoot selects the source/library tree;
 infernoAbis is a comma-separated Gradle property, default armeabi-v7a.
-Do not enable a 64-bit ABI until its complete platform archives have been built:
-new mkfiles are toolchain profiles, not missing emu assembly/FPU/signal ports.
-The existing Gradle/SDK setup is still legacy; these changes do not claim a
-modern toolchain migration or an APK tested on every Android release.
+This library selection does not move runtime files or change /sdcard/Inferno.
+Do not enable a 64-bit ABI until its complete platform archives have been built.
+The existing Gradle/SDK setup remains legacy. APK/device testing is outstanding.
 
 ## Verification
 
-python3 tests/native-storage.py compiles the complete actual installer with
--Wall -Wextra -Werror and strict UBSan. A bounded host asset-manager adapter
-uses real files to check packaging, deployment, user-edit preservation, missing
-asset cleanup, retry and invalid manifest paths. It does not emulate Android
-permissions, validate an APK or execute the complete GUI on a device.
+`python3 tests/shared-storage.py` compiles the actual C resolver with strict
+UBSan and checks exact shared-path requests, permission flags, missing paths,
+non-directory paths and denied access through bounded host stat/access adapters.
+It also checks the compatibility environment value. It cannot certify Android
+permissions or replace testing on a device.
 
-References:
-https://developer.android.com/ndk/reference/struct/a-native-activity
-https://developer.android.com/training/data-storage/app-specific
+`python3 tests/cmake-abis.py` checks actual CMake configuration for the three ABIs
+and unsupported ABI rejection. Set CMAKE to the desired executable if needed.
 
-The actual CMake ABI-selection gate is tests/cmake-abis.py (set CMAKE if needed).
-It configures all three mappings and rejects an unsupported ABI, using a host
-glue placeholder. It does not compile Android sources or validate NDK archives.
+`python3 tests/native-storage.py` enables provisioning and checks actual file
+extraction, preserving existing files, failed-copy cleanup, retry, invalid paths
+and disabling generated assets. A host asset adapter and remapped shared mount
+stand in for Android APIs; no device permission behavior is certified.

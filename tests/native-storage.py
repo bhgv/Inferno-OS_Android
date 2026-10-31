@@ -29,6 +29,9 @@ ADAPTER = r'''
 #include <stdio.h>
 #include <stdlib.h>
 #include "inferno_storage.h"
+#include <sys/stat.h>
+#include <unistd.h>
+#include <string.h>
 
 struct AAsset {
     FILE *file; // Actual host file owned until the matching AAsset_close call.
@@ -95,13 +98,61 @@ AAsset_close(AAsset *asset)
 }
 
 
-/* Pass native storage paths through the complete production installer. */
+static char fixture_root[4096]; // Host stand-in for the sole shared-storage mount.
+
+
+/* Translate only the Android shared mount into this test's temporary filesystem. */
+static const char *fixture_path(const char *path, char *buffer)
+{
+    if(strncmp(path, "/sdcard/Inferno", 15) != 0 || (path[15] != 0 && path[15] != '/'))
+        return path;
+    if(strlen(fixture_root)+8+strlen(path+15)>=4096)
+        abort();
+    strcpy(buffer,fixture_root);
+    strcat(buffer,"/Inferno");
+    strcat(buffer,path+15);
+    return buffer;
+}
+extern int __real_mkdir(const char*,mode_t);
+extern int __real_stat(const char*,struct stat*);
+extern int __real_access(const char*,int);
+extern FILE *__real_fopen(const char*,const char*);
+extern int __real_rename(const char*,const char*);
+extern int __real_unlink(const char*);
+
+
+/* Retain real directory creation below the emulated shared mount. */
+int __wrap_mkdir(const char *p,mode_t m) { char b[4096]; return __real_mkdir(fixture_path(p,b),m); }
+
+
+/* Retain actual filesystem object checks below the emulated shared mount. */
+int __wrap_stat(const char *p,struct stat *s) { char b[4096]; return __real_stat(fixture_path(p,b),s); }
+
+
+/* Retain actual access checks below the emulated shared mount. */
+int __wrap_access(const char *p,int f) { char b[4096]; return __real_access(fixture_path(p,b),f); }
+
+
+/* Keep asset reads and destination writes on real host files. */
+FILE *__wrap_fopen(const char *p,const char *m) { char b[4096]; return __real_fopen(fixture_path(p,b),m); }
+
+
+/* Exercise the actual temporary-file publication operation. */
+int __wrap_rename(const char *p,const char *q) { char b[4096],c[4096]; return __real_rename(fixture_path(p,b),fixture_path(q,c)); }
+
+
+/* Exercise actual cleanup of incomplete extraction files. */
+int __wrap_unlink(const char *p) { char b[4096]; return __real_unlink(fixture_path(p,b)); }
+
+
+/* Bind the emulated shared mount before invoking the complete production installer. */
 int
 test_prepare(const char *internal, const char *base)
 {
     AAssetManager manager = {base};
 
-    return ioa_prepare_storage(internal, base == NULL ? NULL : &manager);
+    snprintf(fixture_root,sizeof(fixture_root),"%s",internal);
+    return ioa_prepare_storage(base == NULL ? NULL : &manager);
 }
 '''
 
@@ -124,7 +175,7 @@ def main():
         (work/'adapter.c').write_text(ADAPTER)
         library = work/'storage.so'
         subprocess.run(['cc','-O2','-g','-Wall','-Wextra','-Werror','-fsanitize=undefined','-fno-sanitize-recover=all','-shared','-fPIC',
-                        '-I'+str(work),'-I'+str(ROOT/'app/src/main/cpp'), str(work/'adapter.c'),str(ROOT/'app/src/main/cpp/inferno_storage.c'),'-o',str(library)],check=True)
+                        '-DINFERNO_BUNDLE_RUNTIME=1','-Wl,--wrap=mkdir','-Wl,--wrap=stat','-Wl,--wrap=access','-Wl,--wrap=fopen','-Wl,--wrap=rename','-Wl,--wrap=unlink','-I'+str(work),'-I'+str(ROOT/'app/src/main/cpp'), str(work/'adapter.c'),str(ROOT/'app/src/main/cpp/inferno_storage.c'),'-o',str(library)],check=True)
         api = C.CDLL(str(library)); api.test_prepare.argtypes = [C.c_char_p,C.c_char_p]
         checks = 0
 
@@ -137,7 +188,7 @@ def main():
         def prepare(path, bundle=assets):
             return api.test_prepare(None if path is None else os.fsencode(path), None if bundle is None else os.fsencode(bundle))
 
-        inside = work/'private files'; inside.mkdir()
+        inside = work/'shared mount'; inside.mkdir()
         check(prepare(inside) == 0)
         root = inside/'Inferno'
         check((root/'dis/emuinit.dis').read_bytes() == b'dis-bytecode\0')
@@ -146,7 +197,6 @@ def main():
         (root/'lib/startup/cmd_line.txt').write_text('custom user command')
         check(prepare(inside) == 0)
         check((root/'lib/startup/cmd_line.txt').read_text() == 'custom user command')
-        check(prepare(None) == -1 and prepare('relative') == -1)
         broken = work/'broken'; shutil.copytree(assets, broken)
         (broken/'inferno/fonts/a font').unlink()
         retry = work/'retry'; retry.mkdir()
@@ -159,7 +209,9 @@ def main():
         check(prepare(inside, None) == 0)
         missing = work/'empty'; missing.mkdir()
         check(prepare(missing, None) == -1)
-        print('PASS native APK storage:',checks,'packaging/filesystem/retry predicates; host asset adapter, not Android execution')
+        subprocess.run(['python3',str(ROOT/'tools/stage-inferno.py'),'--source',str(source),'--output',str(assets/'inferno'),'--disabled'],check=True)
+        check(not (assets/'inferno').exists())
+        print('PASS optional shared-tree provisioning:',checks,'packaging/filesystem/retry predicates; emulated shared mount, not Android execution')
 
 
 if __name__ == '__main__':

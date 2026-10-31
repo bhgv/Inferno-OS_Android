@@ -301,10 +301,9 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 				Ysize = ANativeWindow_getHeight(app->window);
 
 				if(xscreendata == NULL){
-                    if(ioa_prepare_storage(app->activity->internalDataPath,
-                            app->activity->assetManager) != 0){
+                    if(ioa_prepare_storage(app->activity->assetManager) != 0){
                         __android_log_print(ANDROID_LOG_ERROR, "Inferno Storage",
-                                "Cannot prepare app-private Inferno filesystem");
+                                "Cannot access /sdcard/Inferno; check shared-storage permissions");
                         break;
                     }
 					xscreendata = new unsigned char[Xsize * Ysize * 4];

@@ -2,15 +2,23 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
+
+
+#ifndef INFERNO_BUNDLE_RUNTIME
+#define INFERNO_BUNDLE_RUNTIME 0 // APK runtime provisioning is explicitly opt-in.
+#endif
+
+#if INFERNO_BUNDLE_RUNTIME
+#include <android/asset_manager.h>
+#include <stdio.h>
 #include <string.h>
 
 #define StoragePath 4096 // Bound complete native paths and asset names without truncation.
 #define ManifestLimit (4*1024*1024) // Bound the bundled file index before allocating its buffer.
 
 
-/* Create app-owned directories, refusing a conflicting regular file. */
+/* Create missing shared-tree directories, refusing a conflicting regular file. */
 static int
 makedirectory(const char *path)
 {
@@ -155,22 +163,29 @@ installassets(const char *root, AAssetManager *manager)
 }
 
 
-/* NativeActivity supplies its private data path; no Java code or JNI call is involved. */
-int
-ioa_prepare_storage(const char *internal, AAssetManager *manager)
-{
-	char root[StoragePath];
-	int bytes;
+#endif
 
-	if(internal == NULL || internal[0] != '/')
+
+/* Optionally provision the shared tree, then use only /sdcard/Inferno during execution. */
+int
+ioa_prepare_storage(AAssetManager *manager)
+{
+	struct stat state;
+
+#if INFERNO_BUNDLE_RUNTIME
+	if(makedirectory("/sdcard/Inferno") != 0 || installassets("/sdcard/Inferno", manager) != 0)
 		return -1;
-	bytes = snprintf(root, sizeof(root), "%s/Inferno", internal);
-	if(bytes < 0 || (size_t)bytes >= sizeof(root) || makedirectory(root) != 0)
+#else
+	(void)manager;
+#endif
+	if(stat("/sdcard/Inferno", &state) != 0)
 		return -1;
-	if(installassets(root, manager) != 0)
+	if(!S_ISDIR(state.st_mode)){
+		errno = ENOTDIR;
 		return -1;
-	/* The second variable also supports the bundled older amain implementation. */
-	if(setenv("INFERNO_FILES_DIR", internal, 1) != 0 || setenv("EXTERNAL_STORAGE", internal, 1) != 0)
+	}
+	if(access("/sdcard/Inferno", R_OK|W_OK|X_OK) != 0)
 		return -1;
-	return 0;
+	/* Older bundled amain appends /Inferno to this process-local value. */
+	return setenv("EXTERNAL_STORAGE", "/sdcard", 1);
 }

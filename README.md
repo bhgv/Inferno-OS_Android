@@ -17,7 +17,7 @@ it is based on the last [official sources from Vitanuova](https://bitbucket.org/
 ## What is working now
 * Gui. for compatibility main gui app is `wm/awm` (it loads wm/awm after start). sources are in the `/appl/awm` and `/appl/alib`,
 * Touch screen. Only single touches. Don't know where to use multitouches in the Inferno,
-* Files. Native startup installs the bundled runtime into the app-private `Inferno` folder. Shared `/sdcard` access is no longer required for this filesystem.
+* Files. Runtime files remain exclusively in `/sdcard/Inferno`; optional APK provisioning writes missing files directly there.
 * Network. Both styx and the regular tcp connections (permission),
 
 ## What was changed
@@ -108,7 +108,7 @@ open this project in the Android Studio and build apk.
 
 # how to run
 install this apk on the android
-Build the runtime first (including `dis/emuinit.dis`). The APK build stages its runtime data and native startup copies missing files into `<internalDataPath>/Inferno`. Existing user files are preserved. See [native storage and build options](docs/native-storage.md).
+Runtime files must already be present in `/sdcard/Inferno`. Optional APK provisioning extracts missing files directly there; no app-private runtime copy is used. See [storage and build options](docs/native-storage.md).
 
 run it
 

@@ -28,6 +28,12 @@ def main():
             link = (build/'CMakeFiles/inferno_os_app.dir/link.txt').read_text()
             if str(tree/('Android/'+arch+'/lib/emu.a')) not in link:
                 raise RuntimeError('Wrong imported archive for '+abi)
+            flags = build/'CMakeFiles/inferno_os_app.dir/flags.make'
+            if 'INFERNO_BUNDLE_RUNTIME=1' in flags.read_text():
+                raise RuntimeError('Provisioning unexpectedly enabled by default')
+            subprocess.run(command+['-DINFERNO_BUNDLE_RUNTIME=ON'],check=True,capture_output=True,text=True)
+            if 'INFERNO_BUNDLE_RUNTIME=1' not in flags.read_text():
+                raise RuntimeError('Provisioning option missing from native compilation')
             print('PASS actual CMake ABI selection:',abi,arch)
         rejected = subprocess.run([cmake,'-S',str(ROOT/'app/src/main/cpp'),'-B',str(work/'bad'),
                                    '-DCMAKE_POLICY_VERSION_MINIMUM=3.5','-DANDROID_ABI=unsupported'],capture_output=True,text=True)

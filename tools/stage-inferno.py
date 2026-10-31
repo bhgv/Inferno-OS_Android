@@ -13,8 +13,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--disabled', action='store_true')
     args = parser.parse_args()
     source, output = args.source.resolve(), args.output.resolve()
+    if args.disabled:
+        if output.exists():
+            if not (output/'manifest.txt').is_file():
+                raise RuntimeError('Refusing to delete a non-generated asset directory')
+            shutil.rmtree(output)
+        return
     if not (source/'dis/emuinit.dis').is_file():
         raise RuntimeError('Build the Inferno runtime first: dis/emuinit.dis is missing')
     if output == source or source in output.parents or output in source.parents:

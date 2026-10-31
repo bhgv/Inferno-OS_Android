@@ -1,6 +1,9 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+option(INFERNO_BUNDLE_RUNTIME "Provision bundled runtime into /sdcard/Inferno" OFF)
+
+
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 
@@ -146,3 +149,7 @@ target_link_libraries(inferno_os_app
 #    -Wl,--start-group
 #     -Wl,--end-group
 #   libprefab
+
+if(INFERNO_BUNDLE_RUNTIME)
+    target_compile_definitions(inferno_os_app PRIVATE INFERNO_BUNDLE_RUNTIME=1)
+endif()
