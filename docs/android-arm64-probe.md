@@ -46,3 +46,11 @@ The modern-Bionic link gate exposed standard-symbol collisions in Inferno's
 strtoll/strtoull. The ARM64 core now uses private names for both implementations
 and their callers. CI checks the actual archive symbols and every packaged
 ELF LOAD segment; it does not allow multiple definitions to bypass the problem.
+
+The static modern-Bionic CLI harness selects API29 native ELF TLS and supplies
+a real 64-byte-aligned thread-local witness. Its initial thread sets a value;
+the retiring VM worker must see its own zero value. This satisfies Bionic's
+ARM64 static TLS geometry and checks thread isolation instead of disabling the
+loader check. The delivered APK still targets API21+ and uses the real Android
+loader and the core's pthread-key execution context. The CLI harness is not APK
+startup evidence or an API21 static-Bionic compatibility claim.

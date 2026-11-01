@@ -5,6 +5,8 @@
 
 extern void inferno_android_scalar_main(int, char**);
 
+static __thread volatile unsigned char probe_tls[64] __attribute__((aligned(64))); // Real Bionic ELF TLS extent/alignment and thread-isolation witness.
+
 
 /* QEMU/Linux has no Android log daemon; real descriptor output remains independently checked. */
 int
@@ -31,6 +33,8 @@ dladdr(const void *address, Dl_info *information)
 void
 ioa_showsplash(void)
 {
+    if(probe_tls[0] != 0)
+        _exit(3);
     fflush(NULL);
     _exit(0);
 }
@@ -40,6 +44,7 @@ ioa_showsplash(void)
 int
 main(int argc, char **argv)
 {
+    probe_tls[0] = 0x5a;
     inferno_android_scalar_main(argc, argv);
     return 2;
 }

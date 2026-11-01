@@ -43,7 +43,7 @@ if not {'inferno_strtoll','inferno_strtoull'}<=symbols or {'strtoll','strtoull'}
 print('PASS private ARM64 integer converter symbols; Bionic standard entries remain independent')
 PYCORE
 # Only log-daemon/symbolization/CLI-completion adapters are substituted; the Bionic core and JIT are real.
-"$llvm/aarch64-linux-android21-clang" -static tests/arm64-probe-cli.c \
+"$llvm/aarch64-linux-android29-clang" -static -fno-emulated-tls tests/arm64-probe-cli.c \
     -Wl,--start-group "$core/Android/arm64/lib/"*.a -Wl,--end-group -lm -o "$work/bionic-cli"
 python3 "$core/utils/tests/native64-scalar-boot.py" --root "$core" --emu "$work/bionic-cli" \
     --runner qemu-aarch64 | tee "$out/bionic-runtime.log"
