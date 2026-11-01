@@ -43,7 +43,7 @@ for tool in mk limbo iyacc decgen; do ln -sf "$work/host-tools/$tool" "$core/And
 # The legacy Android all/default recipes recurse; request the actual archive explicitly.
 (cd "$core/emu/Android"; mk "$core/Android/arm/lib/emu.a" KERNDATE=1793556000)
 # Native launchers also import libraries outside the emulator's own dependency list.
-for directory in libbio libdynld libstyx libprefab; do
+for directory in libbio libdynld; do
   (cd "$core/$directory"; mk install)
 done
 # Keep the standard compiler/install rules while excluding unrelated optional subprojects.
