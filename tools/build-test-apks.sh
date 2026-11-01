@@ -54,7 +54,7 @@ app="$workspace"
 if [ "$variant" = gles ]; then
   app="$work/gles"
   git clone --depth 1 https://github.com/bhgv/Inferno-OS_Android-Clutter3d.git "$app"
-  git -C "$app" fetch --depth 1 origin 13d058e611ef2e3e79caff86d07b8c9a3dbb9879
+  git -C "$app" fetch --depth 1 origin 6ee40a527460d95d029e56ab138a11a41a3f9dff
   git -C "$app" checkout --detach FETCH_HEAD
   tar --no-same-owner -xzf "$app/install.tgz" -C "$app"
   python3 "$app/tools/rebuild-android-backends.py" --cc "$work/toolchain/bin/arm-linux-androideabi-gcc" --ar "$work/toolchain/bin/arm-linux-androideabi-ar"
