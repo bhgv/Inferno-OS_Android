@@ -41,3 +41,8 @@ A signed build and a QEMU/Bionic pass do not establish physical Android launch,
 SELinux JIT behavior, framebuffer presentation or permissions on a particular
 phone. Device feedback remains required. This is not a complete AWM desktop:
 general native64 module imports and managed calling ABI remain unfinished.
+
+The modern-Bionic link gate exposed standard-symbol collisions in Inferno's
+strtoll/strtoull. The ARM64 core now uses private names for both implementations
+and their callers. CI checks the actual archive symbols and every packaged
+ELF LOAD segment; it does not allow multiple definitions to bypass the problem.

@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 65b57942558f00d620ee3046f82118842fbe43ab
+git -C "$core" fetch --depth 1 origin 56f112e58b2e49ada5735ab529604505319904f4
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -33,6 +33,15 @@ for tool in mk limbo iyacc decgen; do ln -s "$work/host-tools/$tool" "$core/Andr
 (cd "$core/emu/Android"; mk CONF=emu-scalar "$core/Android/arm64/lib/emu.a" KERNDATE=1793577600)
 llvm="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
 python3 tests/arm64-probe.py
+"$llvm/llvm-nm" -g --defined-only "$core/Android/arm64/lib/lib9.a" > "$out/converter-symbols.txt"
+python3 - "$out/converter-symbols.txt" <<'PYCORE'
+from pathlib import Path
+import sys
+symbols={line.split()[-1] for line in Path(sys.argv[1]).read_text().splitlines() if len(line.split())>=3}
+if not {'inferno_strtoll','inferno_strtoull'}<=symbols or {'strtoll','strtoull'}&symbols:
+    raise RuntimeError('Inferno must not interpose on Bionic integer converters')
+print('PASS private ARM64 integer converter symbols; Bionic standard entries remain independent')
+PYCORE
 # Only log-daemon/symbolization/CLI-completion adapters are substituted; the Bionic core and JIT are real.
 "$llvm/aarch64-linux-android21-clang" -static tests/arm64-probe-cli.c \
     -Wl,--start-group "$core/Android/arm64/lib/"*.a -Wl,--end-group -lm -o "$work/bionic-cli"
@@ -79,6 +88,20 @@ for jit in 0 1; do
         -DANDROID_PLATFORM=android-21 -DANDROID_STL=c++_static -DINFERNO_ROOT="$core" \
         -DINFERNO_PROBE_JIT="$jit" -DCMAKE_BUILD_TYPE=Debug
     cmake --build "$native" --parallel 2
+    "$llvm/llvm-readelf" -l "$native/libinferno_os_app.so" > "$out/elf-jit$jit.txt"
+    python3 - "$native/libinferno_os_app.so" <<'PYELF'
+from pathlib import Path
+import struct,sys
+image=Path(sys.argv[1]).read_bytes()
+if image[:6]!=b'\x7fELF\x02\x01' or struct.unpack_from('<H',image,18)[0]!=183:
+    raise RuntimeError('Expected little-endian AArch64 ELF64')
+start=struct.unpack_from('<Q',image,32)[0]
+size,count=struct.unpack_from('<HH',image,54)
+loads=[struct.unpack_from('<Q',image,start+i*size+48)[0] for i in range(count) if struct.unpack_from('<I',image,start+i*size)[0]==1]
+if not loads or any(value<16384 for value in loads):
+    raise RuntimeError('APK native LOAD segments must retain 16KiB alignment')
+print('PASS AArch64 ELF64 with 16KiB native LOAD alignment')
+PYELF
     package="$work/package-$jit"
     mkdir -p "$package/lib/arm64-v8a"
     cp "$native/libinferno_os_app.so" "$package/lib/arm64-v8a/"
