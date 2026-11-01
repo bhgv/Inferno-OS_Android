@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check actual C installation with real files and a bounded host asset-manager adapter."""
 import ctypes as C
+import runpy
 import os
 from pathlib import Path
 import shutil
@@ -33,6 +34,9 @@ ADAPTER = r'''
 #include <unistd.h>
 #include <string.h>
 
+static unsigned int assetopens, progresscalls, lastdone, lasttotal; // Observable fast path and monotonic progress.
+static int cancelafter = -1; // Negative means no requested cancellation.
+
 struct AAsset {
     FILE *file; // Actual host file owned until the matching AAsset_close call.
 };
@@ -47,6 +51,7 @@ AAssetManager_open(AAssetManager *manager, const char *name, int mode)
     FILE *file;
 
     (void)mode;
+    assetopens++;
     if(snprintf(path, sizeof(path), "%s/%s", manager->base, name) >= (int)sizeof(path))
         return NULL;
     file = fopen(path, "rb");
@@ -145,6 +150,26 @@ int __wrap_rename(const char *p,const char *q) { char b[4096],c[4096]; return __
 int __wrap_unlink(const char *p) { char b[4096]; return __real_unlink(fixture_path(p,b)); }
 
 
+/* Verify the actual installer never regresses completed file counts. */
+static int
+observe(unsigned int done, unsigned int total, const char *path, void *argument)
+{
+    (void)path; (void)argument;
+    if(done < lastdone || done > total || (progresscalls && total != lasttotal))
+        abort();
+    progresscalls++; lastdone = done; lasttotal = total;
+    return cancelafter < 0 || done < (unsigned int)cancelafter;
+}
+
+
+/* Expose counters without replacing the actual provisioning implementation. */
+unsigned int test_opens(void) { return assetopens; }
+unsigned int test_progress(void) { return progresscalls; }
+unsigned int test_done(void) { return lastdone; }
+unsigned int test_total(void) { return lasttotal; }
+void test_cancel(int count) { cancelafter = count; }
+
+
 /* Bind the emulated shared mount before invoking the complete production installer. */
 int
 test_prepare(const char *internal, const char *base)
@@ -152,7 +177,8 @@ test_prepare(const char *internal, const char *base)
     AAssetManager manager = {base};
 
     snprintf(fixture_root,sizeof(fixture_root),"%s",internal);
-    return ioa_prepare_storage(base == NULL ? NULL : &manager);
+    assetopens = progresscalls = lastdone = lasttotal = 0;
+    return ioa_prepare_storage_progress(base == NULL ? NULL : &manager, observe, NULL);
 }
 '''
 
@@ -164,8 +190,11 @@ def main():
         source = work/'source'
         for name in ('dis', 'lib', 'fonts', 'icons'):
             (source/name).mkdir(parents=True)
+        required = runpy.run_path(str(ROOT/'tools/stage-inferno.py'))['REQUIRED']
+        for name in required:
+            path = source/name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b'required-runtime')
         (source/'dis/emuinit.dis').write_bytes(b'dis-bytecode\0')
-        (source/'lib/startup').mkdir()
+        (source/'lib/startup').mkdir(exist_ok=True)
         (source/'lib/startup/cmd_line.txt').write_text('wm/awm')
         (source/'fonts/a font').write_bytes(bytes(range(256))*100)
         assets = work/'assets'
@@ -190,12 +219,14 @@ def main():
 
         inside = work/'shared mount'; inside.mkdir()
         check(prepare(inside) == 0)
+        check(api.test_progress() > 0 and api.test_done() == api.test_total() and api.test_total() >= len(required))
         root = inside/'Inferno'
         check((root/'dis/emuinit.dis').read_bytes() == b'dis-bytecode\0')
         check((root/'fonts/a font').read_bytes() == bytes(range(256))*100)
         check((root/'mnt').is_dir() and (root/'usr/inferno').is_dir())
         (root/'lib/startup/cmd_line.txt').write_text('custom user command')
         check(prepare(inside) == 0)
+        check(api.test_opens() == 0 and api.test_progress() == 0)
         check((root/'lib/startup/cmd_line.txt').read_text() == 'custom user command')
         broken = work/'broken'; shutil.copytree(assets, broken)
         (broken/'inferno/fonts/a font').unlink()
@@ -205,10 +236,29 @@ def main():
         check(not list(retry.rglob('*.inferno-install')))
         check(prepare(retry) == 0)
         (broken/'inferno/manifest.txt').write_text('F\t../../escape\n')
-        check(prepare(retry, broken) == -1 and not (work/'escape').exists())
+        check(prepare(retry, broken) == 0 and api.test_opens() == 0 and not (work/'escape').exists())
         check(prepare(inside, None) == 0)
         missing = work/'empty'; missing.mkdir()
         check(prepare(missing, None) == -1)
+        # A ready user's tree wins even over a missing or corrupt packaged manifest.
+        check(prepare(inside, broken) == 0 and api.test_opens() == 0)
+        (root/'dis/wm/awm.dis').unlink()
+        check(prepare(inside, None) == -1)
+        check(prepare(inside) == 0 and (root/'dis/wm/awm.dis').is_file())
+        incomplete = work/'incomplete'; shutil.copytree(assets, incomplete)
+        manifest = incomplete/'inferno/manifest.txt'
+        manifest.write_text(manifest.read_text().replace('F\tdis/wm/awm.dis\n', ''))
+        fresh = work/'fresh'; fresh.mkdir()
+        check(prepare(fresh, incomplete) == -1 and not (fresh/'Inferno/dis').exists())
+        cancelled = work/'cancelled'; cancelled.mkdir()
+        api.test_cancel(1)
+        check(prepare(cancelled) == -1 and not list(cancelled.rglob('*.inferno-install')))
+        api.test_cancel(-1)
+        check(prepare(cancelled) == 0)
+        # Packaging must reject an incomplete UI before replacing any prior generated assets.
+        (source/'dis/wm/awm.dis').unlink()
+        bad = subprocess.run(['python3',str(ROOT/'tools/stage-inferno.py'),'--source',str(source),'--output',str(assets/'inferno')],capture_output=True,text=True)
+        check(bad.returncode != 0 and 'dis/wm/awm.dis' in bad.stderr and (assets/'inferno/manifest.txt').is_file())
         subprocess.run(['python3',str(ROOT/'tools/stage-inferno.py'),'--source',str(source),'--output',str(assets/'inferno'),'--disabled'],check=True)
         check(not (assets/'inferno').exists())
         print('PASS optional shared-tree provisioning:',checks,'packaging/filesystem/retry predicates; emulated shared mount, not Android execution')
@@ -216,3 +266,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

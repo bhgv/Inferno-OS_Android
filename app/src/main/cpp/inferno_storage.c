@@ -1,8 +1,66 @@
 #include "inferno_storage.h"
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+
+static const char *runtimefiles[] = { // Minimum phone desktop entry points, not every optional application.
+	"dis/emuinit.dis", // Required AWM startup asset.
+	"dis/sh.dis", // Required AWM startup asset.
+	"dis/wm/awm.dis", // Required AWM startup asset.
+	"dis/wm/atoolbar.dis", // Required AWM startup asset.
+	"dis/wm/keyboard.dis", // Required AWM startup asset.
+	"dis/wm/sh.dis", // Required AWM startup asset.
+	"dis/lib/arg.dis", // Required AWM startup asset.
+	"dis/lib/string.dis", // Required AWM startup asset.
+	"dis/lib/wmsrv.dis", // Required AWM startup asset.
+	"dis/lib/wmclient.dis", // Required AWM startup asset.
+	"dis/lib/winplace.dis", // Required AWM startup asset.
+	"dis/lib/tkclient.dis", // Required AWM startup asset.
+	"dis/lib/wmlib.dis", // Required AWM startup asset.
+	"dis/lib/titlebar.dis", // Required AWM startup asset.
+	"lib/awmsetup", // Required AWM startup asset.
+	"fonts/ttf/Vera.ttf", // Required AWM startup asset.
+	"dis/sh/std.dis", // Toolbar startup shell builtins.
+	"fonts/ttf/FantasqueSansMono-Regular.ttf", // Default bundled command-line font.
+};
+
+
+static const char *runtimedirs[] = { // Required native namespace mount points.
+	"chan", "dev", "env", "fd", "mnt", "net", "prog", "srv", "tmp", "usr/inferno"
+};
+
+
+/* Prefer a complete user tree and never enumerate APK assets on this fast path. */
+int
+ioa_runtime_ready(void)
+{
+	char path[4096];
+	struct stat state;
+	unsigned int i;
+	int bytes;
+
+	if(stat("/sdcard/Inferno", &state) != 0 || !S_ISDIR(state.st_mode) ||
+	   access("/sdcard/Inferno", R_OK|W_OK|X_OK) != 0)
+		return 0;
+	for(i=0; i<sizeof(runtimefiles)/sizeof(runtimefiles[0]); i++){
+		bytes = snprintf(path, sizeof(path), "/sdcard/Inferno/%s", runtimefiles[i]);
+		if(bytes < 0 || (size_t)bytes >= sizeof(path) || stat(path, &state) != 0 ||
+		   !S_ISREG(state.st_mode) || state.st_size <= 0 || access(path, R_OK) != 0)
+			return 0;
+	}
+	for(i=0; i<sizeof(runtimedirs)/sizeof(runtimedirs[0]); i++){
+		bytes = snprintf(path, sizeof(path), "/sdcard/Inferno/%s", runtimedirs[i]);
+		if(bytes < 0 || (size_t)bytes >= sizeof(path) || stat(path, &state) != 0 ||
+		   !S_ISDIR(state.st_mode) || access(path, R_OK|W_OK|X_OK) != 0)
+			return 0;
+	}
+	return 1;
+}
 
 
 #ifndef INFERNO_BUNDLE_RUNTIME
@@ -109,19 +167,20 @@ installfile(const char *root, const char *name, AAssetManager *manager)
 
 /* Install the bounded index in parent-first order before starting any Inferno process. */
 static int
-installassets(const char *root, AAssetManager *manager)
+installassets(const char *root, AAssetManager *manager, IoaStorageProgress progress, void *argument)
 {
 	AAsset *asset;
 	char *manifest, *line, *end, path[StoragePath];
 	off_t length;
 	size_t used;
 	int bytes, result;
+	unsigned int total = 0, done = 0, i;
+	unsigned char found[sizeof(runtimefiles)/sizeof(runtimefiles[0])] = {0};
 
 	asset = manager == NULL ? NULL : AAssetManager_open(manager, "inferno/manifest.txt", AASSET_MODE_BUFFER);
 	if(asset == NULL){
-		/* Keep manually provisioned roots usable with older APK packaging. */
-		bytes = snprintf(path, sizeof(path), "%s/dis/emuinit.dis", root);
-		return bytes > 0 && (size_t)bytes < sizeof(path) && access(path, R_OK) == 0 ? 0 : -1;
+		errno = ENOENT;
+		return -1;
 	}
 	length = AAsset_getLength(asset);
 	if(length <= 0 || length > ManifestLimit){
@@ -139,6 +198,31 @@ installassets(const char *root, AAssetManager *manager)
 	AAsset_close(asset);
 	manifest[used] = '\0';
 	result = used == (size_t)length && strlen(manifest) == used ? 0 : -1;
+	/* Validate the complete index and count files before mutating shared storage. */
+	for(line = manifest; result == 0 && *line != '\0'; line = end+1){
+		end = strchr(line, '\n');
+		if(end == NULL){ result = -1; break; }
+		*end = '\0';
+		if((line[0] != 'D' && line[0] != 'F') || line[1] != '\t' || !relativepath(line+2))
+			result = -1;
+		else if(line[0] == 'F'){
+			total++;
+			for(i=0; i<sizeof(runtimefiles)/sizeof(runtimefiles[0]); i++)
+				if(strcmp(line+2, runtimefiles[i]) == 0)
+					found[i] = 1;
+		}
+		*end = '\n';
+	}
+	for(i=0; result == 0 && i<sizeof(runtimefiles)/sizeof(runtimefiles[0]); i++)
+		if(!found[i]){
+			fprintf(stderr, "Inferno APK is missing required AWM asset: %s\n", runtimefiles[i]);
+			errno = ENOENT;
+			result = -1;
+		}
+	if(result == 0 && progress != NULL && !progress(0, total, "Preparing /sdcard/Inferno", argument)){
+		errno = ECANCELED;
+		result = -1;
+	}
 	for(line = manifest; result == 0 && *line != '\0'; line = end+1){
 		end = strchr(line, '\n');
 		if(end == NULL){
@@ -150,13 +234,28 @@ installassets(const char *root, AAssetManager *manager)
 			result = -1;
 			break;
 		}
+		if(progress != NULL && !progress(done, total, line+2, argument)){
+			errno = ECANCELED;
+			result = -1;
+			break;
+		}
 		bytes = snprintf(path, sizeof(path), "%s/%s", root, line+2);
 		if(bytes < 0 || (size_t)bytes >= sizeof(path))
 			result = -1;
 		else if(line[0] == 'D')
 			result = makedirectory(path);
-		else
+		else {
 			result = installfile(root, line+2, manager);
+			if(result == 0){
+				done++;
+				if(progress != NULL && !progress(done, total, line+2, argument)){
+					errno = ECANCELED;
+					result = -1;
+				}
+			}
+		}
+		if(result != 0)
+			fprintf(stderr, "Inferno extraction failed: %s (errno=%d)\n", path, errno);
 	}
 	free(manifest);
 	return result;
@@ -166,26 +265,53 @@ installassets(const char *root, AAssetManager *manager)
 #endif
 
 
-/* Optionally provision the shared tree, then use only /sdcard/Inferno during execution. */
+/* Reuse complete shared trees immediately; provision missing entries only when needed. */
+int
+ioa_prepare_storage_progress(AAssetManager *manager, IoaStorageProgress progress, void *argument)
+{
+	if(ioa_runtime_ready())
+		return setenv("EXTERNAL_STORAGE", "/sdcard", 1);
+#if INFERNO_BUNDLE_RUNTIME
+	if(makedirectory("/sdcard/Inferno") != 0 ||
+	   installassets("/sdcard/Inferno", manager, progress, argument) != 0)
+		return -1;
+#else
+	(void)manager; (void)progress; (void)argument;
+#endif
+	if(!ioa_runtime_ready()){
+		fprintf(stderr, "Inferno AWM runtime incomplete: need dis/wm/awm.dis, atoolbar and dependencies in /sdcard/Inferno\n");
+		errno = ENOENT;
+		return -1;
+	}
+	return setenv("EXTERNAL_STORAGE", "/sdcard", 1);
+}
+
+
+/* Preserve native launcher ABI while sharing the complete-tree fast path. */
 int
 ioa_prepare_storage(AAssetManager *manager)
 {
-	struct stat state;
+	return ioa_prepare_storage_progress(manager, NULL, NULL);
+}
 
-#if INFERNO_BUNDLE_RUNTIME
-	if(makedirectory("/sdcard/Inferno") != 0 || installassets("/sdcard/Inferno", manager) != 0)
+
+/* Append native VM diagnostics in the shared tree so a silent desktop can be diagnosed on-device. */
+int
+ioa_startup_log(void)
+{
+	int fd;
+
+	fd = open("/sdcard/Inferno/startup.log", O_WRONLY|O_CREAT|O_APPEND, 0600);
+	if(fd < 0)
 		return -1;
-#else
-	(void)manager;
-#endif
-	if(stat("/sdcard/Inferno", &state) != 0)
-		return -1;
-	if(!S_ISDIR(state.st_mode)){
-		errno = ENOTDIR;
+	if(dup2(fd, 1) < 0 || dup2(fd, 2) < 0){
+		close(fd);
 		return -1;
 	}
-	if(access("/sdcard/Inferno", R_OK|W_OK|X_OK) != 0)
-		return -1;
-	/* Older bundled amain appends /Inferno to this process-local value. */
-	return setenv("EXTERNAL_STORAGE", "/sdcard", 1);
+	if(fd != 1 && fd != 2)
+		close(fd);
+	setvbuf(stdout, NULL, _IOLBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
+	fprintf(stderr, "\nInferno VM startup: /sdcard/Inferno; expected phone desktop /dis/wm/awm.dis\n");
+	return 0;
 }

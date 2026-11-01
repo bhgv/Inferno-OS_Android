@@ -4,6 +4,27 @@ import argparse
 from pathlib import Path
 import shutil
 
+REQUIRED = (
+    'dis/emuinit.dis',
+    'dis/sh.dis',
+    'dis/wm/awm.dis',
+    'dis/wm/atoolbar.dis',
+    'dis/wm/keyboard.dis',
+    'dis/wm/sh.dis',
+    'dis/lib/arg.dis',
+    'dis/lib/string.dis',
+    'dis/lib/wmsrv.dis',
+    'dis/lib/wmclient.dis',
+    'dis/lib/winplace.dis',
+    'dis/lib/tkclient.dis',
+    'dis/lib/wmlib.dis',
+    'dis/lib/titlebar.dis',
+    'lib/awmsetup',
+    'fonts/ttf/Vera.ttf',
+    'dis/sh/std.dis',
+    'fonts/ttf/FantasqueSansMono-Regular.ttf',
+)
+
 DIRECTORIES = ('dis', 'lib', 'fonts', 'icons')
 OPTIONAL = ('acme', 'locale', 'man', 'module', 'services', 'usr/inferno')
 EMPTY = ('chan', 'dev', 'env', 'fd', 'mnt', 'net', 'prog', 'srv', 'tmp', 'usr', 'usr/inferno')
@@ -23,8 +44,9 @@ def main():
                 raise RuntimeError('Refusing to delete a non-generated asset directory')
             shutil.rmtree(output)
         return
-    if not (source/'dis/emuinit.dis').is_file():
-        raise RuntimeError('Build the Inferno runtime first: dis/emuinit.dis is missing')
+    missing = [name for name in REQUIRED if not (source/name).is_file() or (source/name).stat().st_size == 0]
+    if missing:
+        raise RuntimeError('Incomplete Android AWM runtime; build appl/alib and appl/awm and install them before packaging: '+', '.join(missing))
     if output == source or source in output.parents or output in source.parents:
         raise RuntimeError('Place generated assets outside the Inferno source tree')
     directories = set(EMPTY)
@@ -59,3 +81,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

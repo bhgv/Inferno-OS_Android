@@ -311,7 +311,7 @@ void ioa_showsplash(){
 } // extern "C"
 
 
-/* Prepare the app-private filesystem before the first emulator startup. */
+/* Validate or provision the shared tree before the first emulator startup. */
 static void
 ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 {
@@ -332,6 +332,8 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 
 
 LOGE("create pre amain");
+					if(ioa_startup_log() != 0)
+                        __android_log_print(ANDROID_LOG_WARN, "Inferno Storage", "Cannot open /sdcard/Inferno/startup.log");
 					amain();
 LOGE("create post amain");
 
