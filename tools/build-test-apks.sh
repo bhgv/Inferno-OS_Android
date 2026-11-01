@@ -42,6 +42,10 @@ mkdir -p "$core/Android/arm/bin" "$core/Android/arm/lib" "$core/dis/lib" "$core/
 for tool in mk limbo iyacc decgen; do ln -sf "$work/host-tools/$tool" "$core/Android/arm/bin/$tool"; done
 # The legacy Android all/default recipes recurse; request the actual archive explicitly.
 (cd "$core/emu/Android"; mk "$core/Android/arm/lib/emu.a" KERNDATE=1793556000)
+# Native launchers also import libraries outside the emulator's own dependency list.
+for directory in libbio libdynld libstyx libprefab; do
+  (cd "$core/$directory"; mk install)
+done
 # Keep the standard compiler/install rules while excluding unrelated optional subprojects.
 for directory in appl/alib appl/cmd appl/cmd/sh appl/awm; do
   (cd "$core/$directory"; mk install DIRS=)
