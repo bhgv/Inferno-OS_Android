@@ -54,7 +54,7 @@ app="$workspace"
 if [ "$variant" = gles ]; then
   app="$work/gles"
   git clone --depth 1 https://github.com/bhgv/Inferno-OS_Android-Clutter3d.git "$app"
-  git -C "$app" fetch --depth 1 origin 01e113492b8efdf5ca07d5e3edffa0d03489d064
+  git -C "$app" fetch --depth 1 origin da1236c8e96c82463c6965605677574a7e4ff87d
   git -C "$app" checkout --detach FETCH_HEAD
   tar --no-same-owner -xzf "$app/install.tgz" -C "$app"
   python3 "$app/tools/rebuild-android-backends.py" --cc "$work/toolchain/bin/arm-linux-androideabi-gcc" --ar "$work/toolchain/bin/arm-linux-androideabi-ar"
@@ -68,6 +68,7 @@ else
 fi
 python3 "$app/tests/native-storage.py"
 python3 "$app/tests/startup-log.py"
+if [ "$variant" = fb ]; then python3 "$app/tests/startup-screen.py"; fi
 if [ "$variant" = gles ]; then python3 "$app/tests/startup-progress.py"; fi
 assets="$work/assets"
 python3 "$app/tools/stage-inferno.py" --source "$core" --output "$assets/inferno"
@@ -86,9 +87,9 @@ import sys,xml.etree.ElementTree as E
 source,destination,variant=sys.argv[1:]
 E.register_namespace('android','http://schemas.android.com/apk/res/android')
 tree=E.parse(source);root=tree.getroot();a='{http://schemas.android.com/apk/res/android}'
-root.set('package','bhgv.vitanuova.inferno_os.'+variant+'test.startup20261101')
+root.set('package','bhgv.vitanuova.inferno_os.'+variant+'test.storage20261101')
 root.set(a+'versionCode','20261101')
-root.set(a+'versionName','startup-2026-11-01')
+root.set(a+'versionName','storage-2026-11-01')
 for node in root.iter():
     if node.tag in ('application','activity'):node.set(a+'label','Inferno '+variant.upper()+' startup test')
 tree.write(destination,encoding='utf-8',xml_declaration=True)

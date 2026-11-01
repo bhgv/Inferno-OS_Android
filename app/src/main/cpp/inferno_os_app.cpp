@@ -1,5 +1,6 @@
 
 #include <cstdio>
+#include <cstring>
 #include "inferno_storage.h"
 #include <cassert>
 #include <cstdlib>
@@ -10,6 +11,7 @@
 
 #include <android/native_window.h>
 #include <android_native_app_glue.h>
+#include "inferno_startup_screen.h"
 
 #include <android/input.h>
 
@@ -324,9 +326,15 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 				Ysize = ANativeWindow_getHeight(app->window);
 
 				if(xscreendata == NULL){
-                    if(ioa_prepare_storage(app->activity->assetManager) != 0){
-                        __android_log_print(ANDROID_LOG_ERROR, "Inferno Storage",
-                                "Cannot access /sdcard/Inferno; check shared-storage permissions");
+                    if(ioa_prepare_storage_progress(app->activity->assetManager, ioa_fb_storage_progress, app) != 0){
+                        int saved = errno;
+                        char message[768];
+                        snprintf(message, sizeof(message),
+                            saved == EACCES || saved == EPERM ?
+                            "STORAGE ACCESS DENIED. ERROR %d\nCANNOT CREATE /SDCARD/INFERNO\n\nANDROID SETTINGS - APPS - INFERNO FB - PERMISSIONS: ALLOW FILES / STORAGE.\n\nALSO CHECK SPECIAL APP ACCESS - ALL FILES ACCESS.\n\nTHEN CLOSE AND REOPEN INFERNO." :
+                            "STARTUP FAILED. ERROR %d\nCHECK /SDCARD/INFERNO STRUCTURE, FREE SPACE AND BUNDLED FILES.\nTHEN CLOSE AND REOPEN INFERNO.", saved);
+                        ioa_status_screen(app, message, 0);
+                        __android_log_print(ANDROID_LOG_ERROR, "Inferno Storage", "%s", message);
                         break;
                     }
 

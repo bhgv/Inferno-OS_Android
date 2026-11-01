@@ -3,6 +3,9 @@
           package="bhgv.vitanuova.inferno_os"
           android:versionCode="1"
           android:versionName="1.0">
+  <!-- Native launcher uses only /sdcard/Inferno. Grant Files permission in Android Settings before startup. -->
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.RECORD_AUDIO"></uses-permission>

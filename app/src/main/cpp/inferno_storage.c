@@ -272,6 +272,10 @@ ioa_prepare_storage_progress(AAssetManager *manager, IoaStorageProgress progress
 	if(ioa_runtime_ready())
 		return setenv("EXTERNAL_STORAGE", "/sdcard", 1);
 #if INFERNO_BUNDLE_RUNTIME
+	if(progress != NULL && !progress(0, 0, "/sdcard/Inferno", argument)){
+		errno = ECANCELED;
+		return -1;
+	}
 	if(makedirectory("/sdcard/Inferno") != 0 ||
 	   installassets("/sdcard/Inferno", manager, progress, argument) != 0)
 		return -1;

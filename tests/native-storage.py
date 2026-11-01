@@ -31,10 +31,12 @@ ADAPTER = r'''
 #include <stdlib.h>
 #include "inferno_storage.h"
 #include <sys/stat.h>
+#include <errno.h>
 #include <unistd.h>
 #include <string.h>
 
 static unsigned int assetopens, progresscalls, lastdone, lasttotal; // Observable fast path and monotonic progress.
+static int denyroot; // Simulate Android refusing shared storage before APK traversal.
 static int cancelafter = -1; // Negative means no requested cancellation.
 
 struct AAsset {
@@ -127,7 +129,7 @@ extern int __real_unlink(const char*);
 
 
 /* Retain real directory creation below the emulated shared mount. */
-int __wrap_mkdir(const char *p,mode_t m) { char b[4096]; return __real_mkdir(fixture_path(p,b),m); }
+int __wrap_mkdir(const char *p,mode_t m) { char b[4096]; if(denyroot && strcmp(p,"/sdcard/Inferno") == 0){ errno=EACCES; return -1; } return __real_mkdir(fixture_path(p,b),m); }
 
 
 /* Retain actual filesystem object checks below the emulated shared mount. */
@@ -155,7 +157,7 @@ static int
 observe(unsigned int done, unsigned int total, const char *path, void *argument)
 {
     (void)path; (void)argument;
-    if(done < lastdone || done > total || (progresscalls && total != lasttotal))
+    if(done < lastdone || done > total || (lasttotal && total != lasttotal))
         abort();
     progresscalls++; lastdone = done; lasttotal = total;
     return cancelafter < 0 || done < (unsigned int)cancelafter;
@@ -167,6 +169,7 @@ unsigned int test_opens(void) { return assetopens; }
 unsigned int test_progress(void) { return progresscalls; }
 unsigned int test_done(void) { return lastdone; }
 unsigned int test_total(void) { return lasttotal; }
+void test_deny(int value) { denyroot = value; }
 void test_cancel(int count) { cancelafter = count; }
 
 
@@ -217,6 +220,11 @@ def main():
         def prepare(path, bundle=assets):
             return api.test_prepare(None if path is None else os.fsencode(path), None if bundle is None else os.fsencode(bundle))
 
+        denied = work/'denied'; denied.mkdir()
+        api.test_deny(1)
+        check(prepare(denied) == -1 and api.test_progress() == 1 and api.test_opens() == 0 and not (denied/'Inferno').exists())
+        api.test_deny(0)
+        check(prepare(denied) == 0 and (denied/'Inferno/dis/wm/awm.dis').is_file())
         inside = work/'shared mount'; inside.mkdir()
         check(prepare(inside) == 0)
         check(api.test_progress() > 0 and api.test_done() == api.test_total() and api.test_total() >= len(required))
