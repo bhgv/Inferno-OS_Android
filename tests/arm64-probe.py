@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = (ROOT/'app/src/main/cpp/arm64-probe/probe.cpp').read_text()
+SOURCE = Path(os.environ.get('ARM64_PROBE_SOURCE', ROOT/'app/src/main/cpp/arm64-probe/probe.cpp')).read_text()
 
 
 # Extract a complete production function; only its fixed destination path is redirected into the fixture.
@@ -29,8 +29,10 @@ def main():
     installer = installer.replace('"/sdcard/Inferno/dis/native64-apk/series0059-probe.dis64"','fixture_path')
     checker = function('check_result')
     directory = function('directory')
+    starter = function('start_probe')
     unit = r'''
 #include <sys/stat.h>
+#include <pthread.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -48,13 +50,16 @@ struct AAsset {
     size_t at; // Current immutable asset stream offset.
 };
 struct Probe {
+    pthread_mutex_t lock; // Production retry state remains protected by a real mutex.
+    pthread_t worker; // Observed mock thread identity; no unbounded join occurs in the fixture.
+    int started, entered, failed; // Production lifecycle fields checked across consecutive taps.
     int logfd; // Real fixture descriptor consumed by production pread.
     off_t logstart; // Beginning of this session, excluding prior successful output.
 };
-static Probe state;
+static Probe state = {PTHREAD_MUTEX_INITIALIZER};
 static std::vector<unsigned char> bytes(1317);
 static const char *fixture_path;
-static int deny, broken, closed, failed;
+static int deny, broken, closed, failed, created, joined, create_error;
 
 
 /* Borrow the immutable asset payload and allocate a fresh independent stream cursor. */
@@ -99,13 +104,36 @@ static int probe_open(const char *path,int flags,...)
 
 
 /* Record the real checker's success/failure decision without drawing a fake Android screen. */
-static void status(const char *,int value) {failed=value;}
+static void status(const char *,int value) {failed=value;state.failed=value;}
 
 #define open probe_open // Inject denial only around production provisioning.
 INSTALLER
 #undef open
 DIRECTORY
 CHECKER
+
+
+/* Delay worker execution to expose a second tap before the new worker can clear stale failure state. */
+static int fixture_create(pthread_t *thread,const pthread_attr_t *,void *(*)(void*),void*)
+{
+    if(create_error)return EAGAIN;
+    *thread=(pthread_t)++created;
+    return 0;
+}
+
+
+/* Observe joins deterministically; joining the newly created live VM would block the real UI forever. */
+static int fixture_join(pthread_t,void**) {joined++;return 0;}
+
+
+/* The mocked creator never enters a VM; only the production caller's lifecycle is under test here. */
+static void *run_probe(void*) {return NULL;}
+
+#define pthread_create fixture_create // Expose the pending-worker interleaving deterministically.
+#define pthread_join fixture_join // Observe the join decision without hanging the test runner.
+STARTER
+#undef pthread_create
+#undef pthread_join
 
 
 /* Read existing bytes independently to detect accidental overwrite on any refusal. */
@@ -150,10 +178,21 @@ int main(int argc,char **argv)
     if(write(state.logfd,"Broken:",7)!=7)return 15;
     check_result();if(!failed)return 13;
     close(state.logfd);
-    puts("PASS ARM64 probe production functions: exact reuse, no overwrite, short reads, denial, cleanup/retry, directory types, prior-session refusal and native-result validation");
+    state.started=1;state.failed=1;state.entered=0;
+    start_probe();
+    if(created!=1 || joined!=1 || !state.started || state.failed)return 16;
+    start_probe();
+    if(created!=1 || joined!=1)return 17;
+    state.entered=1;state.failed=1;
+    start_probe();
+    if(created!=1 || joined!=1)return 18;
+    state.started=0;state.entered=0;create_error=1;
+    start_probe();
+    if(state.started || !state.failed)return 19;
+    puts("PASS ARM64 probe production functions: exact reuse, no overwrite, short reads, denial, cleanup/retry, directory types, prior-session refusal, native-result validation and pending-worker double-tap refusal");
     return 0;
 }
-'''.replace('INSTALLER',installer).replace('DIRECTORY',directory).replace('CHECKER',checker)
+'''.replace('INSTALLER',installer).replace('DIRECTORY',directory).replace('CHECKER',checker).replace('STARTER',starter)
     with tempfile.TemporaryDirectory(prefix='arm64-probe-') as temporary:
         work=Path(temporary);(work/'test.cpp').write_text(unit)
         command=shlex.split(os.environ.get('CXX','c++'))

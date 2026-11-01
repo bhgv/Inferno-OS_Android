@@ -178,6 +178,9 @@ static void start_probe(void)
         pthread_join(state.worker, NULL);
         state.started = 0;
     }
+    pthread_mutex_lock(&state.lock);
+    state.failed = 0;
+    pthread_mutex_unlock(&state.lock);
     if(pthread_create(&state.worker, NULL, run_probe, NULL) != 0){ status("CANNOT START ARM64 PROBE WORKER. TAP TO RETRY.", 1); return; }
     state.started = 1;
 }
