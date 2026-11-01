@@ -77,3 +77,41 @@ VM worker. Native window posting pauses when Android removes focus.
 
 Artifacts require a GitHub login and follow the repository retention period.
 These successful checks remain separate from the required physical-phone test.
+
+
+## Device-reported retirement failure and corrected APKs
+
+The first phone logs reproduce `alloc:D2B ... in free blk` after the module
+reports `exit=""` and an empty scheduler, in both JIT0 and JIT1. The APKs from
+build 41354049175 therefore do not pass complete worker retirement. The old CLI
+adapter exited at the splash callback, before production `pexit`, and missed
+this failure.
+
+Core commit `0a7cb57f00482117007a49f7f41c718d0075cae3` detaches the worker's
+borrowed `Osenv` before `delprog` frees it. Otherwise Android `pexit` reads the
+freed environment and frees its user string again. The corrected scheduler
+fixture checks the pointer before process free and host exit, instead of
+repairing it in the test. Removing the production fix fails the control.
+
+The revised Bionic CLI adapter returns from the completion callback and waits
+for actual `pexit` to reach `pthread_exit`. An ARM64/Bionic r16b QEMU replay of
+the exact bundled module reproduces the allocator panic with the old core in
+both modes; the corrected core exits zero in both modes. Symbolization locates
+the old caller in `pexit` at `free(e->user)`. This is runtime cleanup evidence,
+not physical Android UI validation.
+
+[Corrected build 41357793945](https://github.com/bhgv/Inferno-OS_Android/actions/runs/41357793945)
+passes NDK r27c compilation, host launcher gates, 38 Bionic/QEMU processes with
+1096 in-program checks, import refusals and both exact packaged-image runs,
+including real worker cleanup. Launcher pin: `9a893441692d3c21ac82df81e34e6660e7915078`.
+[Download the corrected APK pair and evidence](https://github.com/bhgv/Inferno-OS_Android/actions/runs/41357793945/artifacts/13103996704).
+
+| APK | SHA256 |
+| --- | --- |
+| Inferno-FB-arm64-v8a-probe-jit0.apk | ff7610c2ac9512c875b11eea3799c4a3b644993052990ade1a42b47334a5fd6b |
+| Inferno-FB-arm64-v8a-probe-jit1.apk | 55f7a00a73ae222cc80fa93e4a4411e53e2f8277c5c7664dbb3ab4d7ba9e99f4 |
+
+Downloaded files match their checksums, contain ELF64/AArch64 native libraries
+with 16KiB LOAD alignment, no DEX and the unchanged shared probe image. These
+remain scalar framebuffer probes, without AWM. Physical-phone confirmation of
+the corrected retirement path is pending.
