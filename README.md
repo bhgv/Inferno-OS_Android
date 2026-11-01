@@ -113,3 +113,18 @@ Runtime files must already be present in `/sdcard/Inferno`. Optional APK provisi
 run it
 
 ![Acme & Charon](doku/acme_charon.jpg)
+
+## AWM window-token I/O fix
+
+Use Inferno core experiment f7521acdd7d963c77421f31a03400f14ea6d2e5f or a
+revision containing that fix when rebuilding native archives. Ordinary Limbo
+byte arrays retain module-owned Type descriptors. The former Sys I/O singleton
+check rejected them with Ebadarg, preventing wmlib from reading /chan/wmctl and
+leaving the desktop background without its controls. This shared core fix applies
+to both renderers; it does not change their different coordinate calculations.
+
+The byte I/O test APKs retain bundled runtime assets and reuse an existing valid
+/sdcard/Inferno. No runtime files need to be moved or replaced for this C fix.
+The test package suffix changes to avoid ephemeral signing-key collisions; grant
+Files/Storage access to the newly installed test application. Source and native
+I/O regression checks cannot replace an actual phone launch test.

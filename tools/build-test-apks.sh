@@ -27,7 +27,7 @@ buildtools="$sdk/android-9"
 export LD_LIBRARY_PATH="$buildtools/lib64:${LD_LIBRARY_PATH:-}"
 core="$work/core"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin c958911cc2da9ad796638c4df85334d55999ba82
+git -C "$core" fetch --depth 1 origin f7521acdd7d963c77421f31a03400f14ea6d2e5f
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -50,11 +50,14 @@ done
 for directory in appl/alib appl/cmd appl/cmd/sh appl/awm; do
   (cd "$core/$directory"; mk install DIRS=)
 done
+# AWM's normal byte buffer has a module descriptor, not the builtin Tbyte address.
+SYS_IO_PORTS=emu CFLAGS='-O2 -g -DNDEBUG -fno-strict-aliasing -fsanitize=undefined -fno-sanitize-recover=all' \
+  python3 "$core/libinterp/tests/sys-io.py"
 app="$workspace"
 if [ "$variant" = gles ]; then
   app="$work/gles"
   git clone --depth 1 https://github.com/bhgv/Inferno-OS_Android-Clutter3d.git "$app"
-  git -C "$app" fetch --depth 1 origin 6ee40a527460d95d029e56ab138a11a41a3f9dff
+  git -C "$app" fetch --depth 1 origin 5248391f91f7518901849cb28f202784dcadbbec
   git -C "$app" checkout --detach FETCH_HEAD
   tar --no-same-owner -xzf "$app/install.tgz" -C "$app"
   python3 "$app/tools/rebuild-android-backends.py" --cc "$work/toolchain/bin/arm-linux-androideabi-gcc" --ar "$work/toolchain/bin/arm-linux-androideabi-ar"
@@ -97,11 +100,11 @@ import sys,xml.etree.ElementTree as E
 source,destination,variant=sys.argv[1:]
 E.register_namespace('android','http://schemas.android.com/apk/res/android')
 tree=E.parse(source);root=tree.getroot();a='{http://schemas.android.com/apk/res/android}'
-root.set('package','bhgv.vitanuova.inferno_os.'+variant+'test.render20261101')
+root.set('package','bhgv.vitanuova.inferno_os.'+variant+'test.byteio20261101')
 root.set(a+'versionCode','20261101')
-root.set(a+'versionName','render-2026-11-01')
+root.set(a+'versionName','byteio-2026-11-01')
 for node in root.iter():
-    if node.tag in ('application','activity'):node.set(a+'label','Inferno '+variant.upper()+' render test')
+    if node.tag in ('application','activity'):node.set(a+'label','Inferno '+variant.upper()+' byte I/O test')
 tree.write(destination,encoding='utf-8',xml_declaration=True)
 PY
 jar="$(find "$sdk/platform" -name android.jar -print -quit)"
