@@ -1,3 +1,4 @@
+#include <unistd.h> // End the process when its native VM activity is destroyed.
 
 #include <cstdio>
 #include <cstring>
@@ -426,6 +427,9 @@ extern "C" void android_main(struct android_app* state) {
             if (state->destroyRequested != 0) {
                 LOGI("Engine thread destroy requested!");
                 engine.TerminateDisplay();
+                // VM workers cannot outlive this stack-owned Engine and Android activity.
+                if(xscreendata != NULL)
+                    _exit(0);
                 return;
             }
         }
