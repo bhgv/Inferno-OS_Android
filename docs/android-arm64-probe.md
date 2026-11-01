@@ -54,3 +54,26 @@ ARM64 static TLS geometry and checks thread isolation instead of disabling the
 loader check. The delivered APK still targets API21+ and uses the real Android
 loader and the core's pthread-key execution context. The CLI harness is not APK
 startup evidence or an API21 static-Bionic compatibility claim.
+
+## Downloads and recorded validation
+
+[Build 41354049175](https://github.com/bhgv/Inferno-OS_Android/actions/runs/41354049175)
+passes NDK r27c, all bounded host gates, 38 Bionic/QEMU processes with 1096
+in-program checks and exact packaged-image runs with JIT0/1.
+[Download both signed APKs and logs](https://github.com/bhgv/Inferno-OS_Android/actions/runs/41354049175/artifacts/13102686436).
+
+Install Inferno-FB-arm64-v8a-probe-jit0.apk for the interpreter or
+Inferno-FB-arm64-v8a-probe-jit1.apk for JIT. They have distinct application IDs.
+Expected screen: PASS: ANDROID ARM64 DIS64. Exact source pins in the archive are
+core56f112e and launcher ebfdea0. Both downloaded APKs are genuine ELF64/AArch64,
+contain no DEX, retain 16KiB LOAD alignment and match their recorded checksums.
+The archive also contains the source, identical bundled Dis64 image, private
+source map, NDK revision, signature/ABI results and build/runtime logs.
+
+The retry-state gate deliberately delays worker startup to expose rapid second
+taps. The old state transition fails this control; the final launcher clears
+failure state before creating a new worker, so a second tap cannot join a live
+VM worker. Native window posting pauses when Android removes focus.
+
+Artifacts require a GitHub login and follow the repository retention period.
+These successful checks remain separate from the required physical-phone test.
