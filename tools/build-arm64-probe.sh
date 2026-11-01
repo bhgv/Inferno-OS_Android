@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 56f112e58b2e49ada5735ab529604505319904f4
+git -C "$core" fetch --depth 1 origin 0a7cb57f00482117007a49f7f41c718d0075cae3
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -44,7 +44,7 @@ print('PASS private ARM64 integer converter symbols; Bionic standard entries rem
 PYCORE
 # Only log-daemon/symbolization/CLI-completion adapters are substituted; the Bionic core and JIT are real.
 "$llvm/aarch64-linux-android29-clang" -static -fno-emulated-tls tests/arm64-probe-cli.c \
-    -Wl,--start-group "$core/Android/arm64/lib/"*.a -Wl,--end-group -lm -o "$work/bionic-cli"
+    -Wl,--start-group "$core/Android/arm64/lib/"*.a -Wl,--end-group -Wl,--wrap=pthread_exit -lm -o "$work/bionic-cli"
 python3 "$core/utils/tests/native64-scalar-boot.py" --root "$core" --emu "$work/bionic-cli" \
     --runner qemu-aarch64 | tee "$out/bionic-runtime.log"
 assets="$work/assets"
