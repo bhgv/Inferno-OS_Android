@@ -21,6 +21,7 @@ struct ProbeState {
     pthread_t worker; // Main VM thread remains alive until this dedicated Activity process exits.
     android_app *app; // Activity borrow ends with process teardown.
     int started; // UI thread owns thread creation and retry decisions.
+    int focused; // UI thread paints only while Android gives this window focus.
     int entered; // VM cannot be restarted within the same process.
     int failed; // Provisioning failed before entering the VM.
     int retired; // Core reports scheduler retirement through its native completion callback.
@@ -187,6 +188,10 @@ static void command(android_app *app, int32_t event)
 {
     if(event == APP_CMD_INIT_WINDOW && app->window != NULL)
         start_probe();
+    if(event == APP_CMD_GAINED_FOCUS)
+        state.focused = 1;
+    if(event == APP_CMD_LOST_FOCUS || event == APP_CMD_TERM_WINDOW)
+        state.focused = 0;
 }
 
 
@@ -226,6 +231,6 @@ extern "C" void android_main(android_app *app)
         memcpy(message, state.message, sizeof(message));
         pthread_mutex_unlock(&state.lock);
         if(retired && !state.checked){ check_result(); state.checked = 1; }
-        if(app->window != NULL) ioa_status_screen(app, message, retired ? 100 : 10);
+        if(app->window != NULL && state.focused) ioa_status_screen(app, message, retired ? 100 : 10);
     }
 }
