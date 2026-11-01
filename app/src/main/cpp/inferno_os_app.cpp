@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include "inferno_storage.h"
-#include <cassert>
+
 #include <cstdlib>
 #include <climits>
 
@@ -12,6 +12,7 @@
 #include <android/native_window.h>
 #include <android_native_app_glue.h>
 #include "inferno_startup_screen.h"
+#include "inferno_fb_pixels.h"
 
 #include <android/input.h>
 
@@ -148,6 +149,8 @@ static int32_t ProcessAndroidInput(struct android_app *app, AInputEvent *event) 
 	switch(AInputEvent_getType(event)){
 		case AINPUT_EVENT_TYPE_MOTION:
 			{
+                if(app->window == NULL || xscreendata == NULL)
+                    return 1;
 				int32_t action = AMotionEvent_getAction( event ) & AMOTION_EVENT_ACTION_MASK;
 				switch(action){
 					case AMOTION_EVENT_ACTION_MOVE:
@@ -196,6 +199,10 @@ LOGI("m multi( %d )touch X=%d, Y=%d, dt=%d", mbtns, x, y, tap_time - first_tap_t
 						}
 						break;
 
+                    case AMOTION_EVENT_ACTION_CANCEL:
+                        xmouse_btn(x, y, 0);
+                        mbtns = 0;
+                        break;
 					case AMOTION_EVENT_ACTION_UP:
 						{
 							if( id == AMotionEvent_getPointerId(event, 0) ){
@@ -317,15 +324,13 @@ void ioa_showsplash(){
 static void
 ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 {
-    static int32_t format = WINDOW_FORMAT_RGB_565;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
     switch (cmd) {
         case APP_CMD_INIT_WINDOW:
             if (engine->AndroidApp()->window != NULL) {
-				Xsize = ANativeWindow_getWidth(app->window);
-				Ysize = ANativeWindow_getHeight(app->window);
-
 				if(xscreendata == NULL){
+                    Xsize = ANativeWindow_getWidth(app->window);
+                    Ysize = ANativeWindow_getHeight(app->window);
                     if(ioa_prepare_storage_progress(app->activity->assetManager, ioa_fb_storage_progress, app) != 0){
                         int saved = errno;
                         char message[768];
@@ -351,11 +356,9 @@ LOGE("create post amain");
 	                // display format to 565 to save time coping. normally
 	                // 565 might be buggy ( if 565 works, 32 bit mostly like
 	                // would work )				
-	                format = ANativeWindow_getFormat(app->window);
 				}
                 ANativeWindow_setBuffersGeometry(app->window,
-                              ANativeWindow_getWidth(app->window),
-                              ANativeWindow_getHeight(app->window),
+                              0, 0,
                               WINDOW_FORMAT_RGBX_8888	//WINDOW_FORMAT_RGB_565	//WINDOW_FORMAT_RGBX_8888	//WINDOW_FORMAT_RGB_565
                 );
 				ANativeActivity* activity = app->activity;
@@ -371,20 +374,20 @@ LOGE("create post amain");
             }
             break;
         case APP_CMD_TERM_WINDOW:
-            engine->StartAnimation(false);
             engine->TerminateDisplay();
-            ANativeWindow_setBuffersGeometry(app->window,
-                          ANativeWindow_getWidth(app->window),
-                          ANativeWindow_getHeight(app->window),
-                          format);
-
-//            delete[] xscreendata;
-//			xscreendata = NULL;
-LOGE("terminate window");
             break;
         case APP_CMD_LOST_FOCUS:
             engine->StartAnimation(false);
-            engine->UpdateDisplay();
+            if(xscreendata != NULL)
+                xmouse_btn(0, 0, 0);
+            break;
+        case APP_CMD_GAINED_FOCUS:
+        case APP_CMD_WINDOW_REDRAW_NEEDED:
+        case APP_CMD_WINDOW_RESIZED:
+            if(app->window != NULL && xscreendata != NULL){
+                engine->StartAnimation(true);
+                engine->UpdateDisplay();
+            }
             break;
 		case APP_CMD_DESTROY: 
 LOGI("terminate app\n");
@@ -454,10 +457,8 @@ bool Engine::PrepareDrawing(void) {
 
 
 bool Engine::UpdateDisplay(void) {
-    if (!app_->window) {
-        assert(0);
+    if(app_->window == NULL || xscreendata == NULL)
         return false;
-    }
     struct timespec curTime;
     clock_gettime(CLOCK_MONOTONIC, &curTime);
     if(
@@ -510,97 +511,14 @@ bool Engine::UpdateDisplay(void) {
  *     assumption:
  *         src and bug MUST be in the same geometry format & layout
  */
-void Engine::UpdateFrameBuffer(ANativeWindow_Buffer* buf, uint8_t* src) {
-    // src is either null: to blank the screen
-    //     or holding exact pixels with the same fmt [stride is the SAME]
-    uint8_t *dst = reinterpret_cast<uint8_t*> (buf->bits);
-    uint32_t bpp;
-    int i, j;
-
-LOGE("update fb fmt=%d, buf=%x", buf->format, dst);
-    switch (buf->format) {
-        case WINDOW_FORMAT_RGB_565:
-            bpp = 2;
-            break;
-        case WINDOW_FORMAT_RGBA_8888:
-        case WINDOW_FORMAT_RGBX_8888:
-            bpp = 4;
-            break;
-        default:
-            assert( 0 );
-            return;
-    }
-
-//	if(is_int_refresh == 0){
-		xb = 0;
-		yb = 0;
-		xe = Xsize; //buf->width;
-		ye = Ysize; //buf->height;
-//	}
-	
-    uint32_t stride, width;
-    stride = buf->stride * bpp;
-    width = xe * bpp;
-	
-    if (src) {
-        for (int height = yb; height < ye; ++height) {
-            for(i = xb * bpp, j = xb * 4; i < width; ){
-				unsigned short r = src[j+2];
-				unsigned short g = src[j+1];
-				unsigned short b = src[j];
-				
-				switch (buf->format) {
-					case WINDOW_FORMAT_RGB_565:
-						*((unsigned short*)&dst[i]) = 
-										((r & 31) << 11) +
-										((g & 63) << 5) +
-										(b & 31)
-										;
- 						break;
-					case WINDOW_FORMAT_RGBA_8888:
-					case WINDOW_FORMAT_RGBX_8888:
-						dst[i+0] = (uint8_t)r;
-						dst[i+1] = (uint8_t)g;
-						dst[i+2] = (uint8_t)b;
-//						dst[i+3] = src[j+3];
-						break;
-					default:
-						assert( 0 );
-						return;
-				};
-				j += 4;
-				i += bpp;
-            }
-			
-            dst += stride;
-			src += Xsize * 4;
-        }
-    }
-#if 0
-	  else {
-        for (auto height =0; height < buf->height; ++height) {
-            for(i = 0; i < width; i++ /*+= bpp*/){
-				if((int)(i/bpp) == height)
-					dst[i] = 0xff;
-				else
-					dst[i] = 0;
-            }
-            //memset(dst, 0, width);
-            dst += stride;
-        }
-    }
-#endif
+/* Copy the original FB coordinate space one-to-one; only buffer bounds clip it. */
+void Engine::UpdateFrameBuffer(ANativeWindow_Buffer* buf, uint8_t* src)
+{
+    if(buf == NULL || buf->bits == NULL || buf->width <= 0 || buf->height <= 0 || buf->stride < buf->width)
+        return;
+    ioa_fb_copy(buf->bits, buf->width, buf->height, buf->stride, buf->format,
+                src, Xsize, Ysize);
 }
-
-
-
-
-
-
-
-
-
-
 
 
 ////////////////////////////////////////////////////////////
