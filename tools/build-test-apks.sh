@@ -20,8 +20,8 @@ python3 "$ndk/build/tools/make_standalone_toolchain.py" --arch arm --api 17 --in
 curl -fsSL --retry 3 https://dl.google.com/android/repository/build-tools_r28.0.3-linux.zip -o "$work/build-tools.zip"
 echo "ea6f2f7103cd9da9ff0bdf6e37fbbba548fa4165  $work/build-tools.zip" | sha1sum -c -
 unzip -q "$work/build-tools.zip" -d "$sdk"
-curl -fsSL --retry 3 https://dl.google.com/android/repository/android-17_r03.zip -o "$work/platform.zip"
-echo "dbe14101c06e6cdb34e300393e64e64f8c92168a  $work/platform.zip" | sha1sum -c -
+curl -fsSL --retry 3 https://dl.google.com/android/repository/platform-28_r06.zip -o "$work/platform.zip"
+echo "9a4e52b1d55bd2e24216b150aafae2503d3efba6  $work/platform.zip" | sha1sum -c -
 unzip -q "$work/platform.zip" -d "$sdk/platform"
 buildtools="$sdk/android-9"
 export LD_LIBRARY_PATH="$buildtools/lib64:${LD_LIBRARY_PATH:-}"
