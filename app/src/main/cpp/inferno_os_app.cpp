@@ -352,10 +352,6 @@ LOGE("create post amain");
 
 					assetManager = app->activity->assetManager;
 
-	                // save current format to format variable, and set
-	                // display format to 565 to save time coping. normally
-	                // 565 might be buggy ( if 565 works, 32 bit mostly like
-	                // would work )				
 				}
                 ANativeWindow_setBuffersGeometry(app->window,
                               0, 0,

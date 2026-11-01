@@ -54,7 +54,7 @@ app="$workspace"
 if [ "$variant" = gles ]; then
   app="$work/gles"
   git clone --depth 1 https://github.com/bhgv/Inferno-OS_Android-Clutter3d.git "$app"
-  git -C "$app" fetch --depth 1 origin c09e9ee2beafd652fb80ef8b506aca87ae5915d2
+  git -C "$app" fetch --depth 1 origin 13d058e611ef2e3e79caff86d07b8c9a3dbb9879
   git -C "$app" checkout --detach FETCH_HEAD
   tar --no-same-owner -xzf "$app/install.tgz" -C "$app"
   python3 "$app/tools/rebuild-android-backends.py" --cc "$work/toolchain/bin/arm-linux-androideabi-gcc" --ar "$work/toolchain/bin/arm-linux-androideabi-ar"
@@ -72,6 +72,7 @@ if [ "$variant" = fb ]; then
   python3 "$app/tests/startup-screen.py"
   python3 "$app/tests/framebuffer-pixels.py"
   python3 "$app/tests/framebuffer-startup.py"
+  python3 "$app/tests/framebuffer-lifecycle.py"
 fi
 if [ "$variant" = gles ]; then
   python3 "$app/tests/startup-progress.py"
