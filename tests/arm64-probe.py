@@ -26,7 +26,7 @@ def function(name):
 # Run real stream and descriptor operations while mocking only Android assets and visible status publication.
 def main():
     installer = function('install_probe')
-    installer = installer.replace('"/sdcard/Inferno/dis/native64-apk/series0059-probe.dis64"','fixture_path')
+    installer = installer.replace('"/sdcard/Inferno/dis/native64-apk/series0067-probe.dis64"','fixture_path')
     checker = function('check_result')
     directory = function('directory')
     starter = function('start_probe')
@@ -177,6 +177,10 @@ int main(int argc,char **argv)
     check_result();if(failed)return 12;
     if(write(state.logfd,"Broken:",7)!=7)return 15;
     check_result();if(!failed)return 13;
+    state.logstart=lseek(state.logfd,0,SEEK_END);
+    if(write(state.logfd,good,strlen(good))!=(ssize_t)strlen(good))return 14;
+    if(write(state.logfd,"panic: retirement failed",24)!=24)return 15;
+    check_result();if(!failed)return 20;
     close(state.logfd);
     state.started=1;state.failed=1;state.entered=0;
     start_probe();
@@ -199,6 +203,15 @@ int main(int argc,char **argv)
         command+=shlex.split(os.environ.get('CXXFLAGS','-O2 -g -fsanitize=undefined -fno-sanitize-recover=all'))
         subprocess.run(command+['-std=c++11',str(work/'test.cpp'),'-o',str(work/'test')],check=True)
         subprocess.run([str(work/'test'),str(work)],check=True)
+        control=unit.replace(' && strstr(output, "panic:") == NULL', '')
+        if control==unit:
+            raise RuntimeError('Inactive panic-result control')
+        (work/'test.cpp').write_text(control)
+        subprocess.run(command+['-std=c++11',str(work/'test.cpp'),'-o',str(work/'test')],check=True)
+        result=subprocess.run([str(work/'test'),str(work)])
+        if result.returncode!=20:
+            raise RuntimeError('Panic-result control did not expose false success')
+        print('PASS active native-result control: completion markers cannot hide a retirement panic')
 
 
 if __name__=='__main__':

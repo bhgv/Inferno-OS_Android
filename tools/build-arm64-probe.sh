@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 0a7cb57f00482117007a49f7f41c718d0075cae3
+git -C "$core" fetch --depth 1 origin 7e0b26b981b92d5b99f6205085e2b7c29c09cedf
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -47,6 +47,12 @@ PYCORE
     -Wl,--start-group "$core/Android/arm64/lib/"*.a -Wl,--end-group -Wl,--wrap=pthread_exit -lm -o "$work/bionic-cli"
 python3 "$core/utils/tests/native64-scalar-boot.py" --root "$core" --emu "$work/bionic-cli" \
     --runner qemu-aarch64 | tee "$out/bionic-runtime.log"
+# Execute the current compiler's actual case/helper/result images on the real ARM64/Bionic VM.
+python3 "$core/utils/tests/dis64-cases.py" --limbo "$work/host-tools/limbo" \
+    --root "$core" --emu "$work/bionic-cli" --runner qemu-aarch64 | tee "$out/bionic-cases.log"
+python3 "$core/utils/tests/dis64-inline.py" --limbo "$work/host-tools/limbo" \
+    --root "$core" --emu "$work/bionic-cli" --runner qemu-aarch64 | tee "$out/bionic-helpers.log"
+python3 "$core/utils/tests/dis64-setup-targets.py" | tee "$out/compiler-setup-targets.log"
 assets="$work/assets"
 mkdir -p "$assets/native64"
 python3 "$core/utils/dis64-locations.py" compile --limbo "$work/host-tools/limbo" \
@@ -111,15 +117,15 @@ import sys,xml.etree.ElementTree as E
 jit,destination=sys.argv[1:]
 E.register_namespace('android','http://schemas.android.com/apk/res/android')
 tree=E.parse('app/src/main/cpp/arm64-probe/AndroidManifest.xml');root=tree.getroot();a='{http://schemas.android.com/apk/res/android}'
-root.set('package','bhgv.vitanuova.inferno_os.arm64fbprobe.jit'+jit)
-root.find('application').set(a+'label','Inferno ARM64 FB '+('JIT' if jit=='1' else 'C'))
+root.set('package','bhgv.vitanuova.inferno_os.arm64fbprobe.series0067.jit'+jit)
+root.find('application').set(a+'label','Inferno ARM64 0067 '+('JIT' if jit=='1' else 'C'))
 tree.write(destination,encoding='utf-8',xml_declaration=True)
 PY
     "$buildtools/aapt" package -f -M "$work/AndroidManifest.xml" -S app/src/main/res -A "$assets" -I "$jar" \
         --min-sdk-version 21 --target-sdk-version 28 -F "$work/unsigned-$jit.apk"
     (cd "$package"; zip -q -0 "$work/unsigned-$jit.apk" lib/arm64-v8a/libinferno_os_app.so)
     "$buildtools/zipalign" -f 4 "$work/unsigned-$jit.apk" "$work/aligned-$jit.apk"
-    apk="$out/Inferno-FB-arm64-v8a-probe-jit$jit.apk"
+    apk="$out/Inferno-FB-arm64-v8a-series0067-jit$jit.apk"
     java -jar "$buildtools/lib/apksigner.jar" sign --ks "$work/test.jks" --ks-key-alias androiddebugkey \
         --ks-pass pass:android --key-pass pass:android --out "$apk" "$work/aligned-$jit.apk"
     java -jar "$buildtools/lib/apksigner.jar" verify --verbose "$apk"

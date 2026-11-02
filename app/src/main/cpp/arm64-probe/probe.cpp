@@ -68,7 +68,7 @@ static int install_probe(AAssetManager *manager)
 {
     unsigned char buffer[1024], existing[1024];
     AAsset *asset = AAssetManager_open(manager, "native64/probe.dis64", AASSET_MODE_STREAMING);
-    const char *path = "/sdcard/Inferno/dis/native64-apk/series0059-probe.dis64";
+    const char *path = "/sdcard/Inferno/dis/native64-apk/series0067-probe.dis64";
     int fd, owned, count, ok = 1, saved = 0;
 
     if(asset == NULL){ errno = ENOENT; return 0; }
@@ -108,7 +108,7 @@ static void *run_probe(void *argument)
     char message[768];
     char *argv[] = {(char*)"android-arm64-fb", (char*)"-v", (char*)"-s", (char*)"-r",
         (char*)"/sdcard/Inferno", (char*)"-c", (char*)(INFERNO_PROBE_JIT ? "1" : "0"),
-        (char*)"-d", (char*)"/dis/native64-apk/series0059-probe.dis64", NULL};
+        (char*)"-d", (char*)"/dis/native64-apk/series0067-probe.dis64", NULL};
     (void)argument;
 
     status("ARM64 FB PROBE\nPREPARING /SDCARD/INFERNO\nNO PRIVATE RUNTIME DIRECTORY", 0);
@@ -158,8 +158,8 @@ static void check_result(void)
     output[count] = 0;
     snprintf(marker, sizeof(marker), "native64 scalar module Native64AndroidProbe: jit=%d, exit=\"\"", INFERNO_PROBE_JIT);
     if(strstr(output, marker) != NULL && strstr(output, "native64 scalar scheduler empty after program retirement") != NULL &&
-       strstr(output, "Broken:") == NULL && strstr(output, "faults:") == NULL)
-        status("PASS: ANDROID ARM64 DIS64\nPROGRAM COMPLETED AND SCHEDULER RETIRED\n4097 CALLS, CASE, INT/BIG/REAL CHECKS PASSED\nTHIS IS A SCALAR PROBE, NOT AWM.\nLOG: /SDCARD/INFERNO/NATIVE64-FB-PROBE.LOG\nBACK CLOSES THE PROBE.", 0);
+       strstr(output, "Broken:") == NULL && strstr(output, "faults:") == NULL && strstr(output, "panic:") == NULL)
+        status("PASS: ANDROID ARM64 DIS64\nPROGRAM COMPLETED AND SCHEDULER RETIRED\n4097 RESULT CALLS AND CASE PASSED\nINT/BIG/REAL RETURNS PASSED\nTHIS IS A SCALAR PROBE, NOT AWM.\nLOG: /SDCARD/INFERNO/NATIVE64-FB-PROBE.LOG\nBACK CLOSES THE PROBE.", 0);
     else
         status("FAIL: ARM64 DIS64 PROBE\nEXPECTED COMPLETION WAS NOT RECORDED.\nSEND /SDCARD/INFERNO/NATIVE64-FB-PROBE.LOG\nTHIS APK DOES NOT START AWM.", 1);
 }

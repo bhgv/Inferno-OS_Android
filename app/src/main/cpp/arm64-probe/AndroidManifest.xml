@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="bhgv.vitanuova.inferno_os.arm64fbprobe" android:versionCode="20261102" android:versionName="arm64-probe-0059">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="bhgv.vitanuova.inferno_os.arm64fbprobe" android:versionCode="20261102" android:versionName="arm64-probe-0067">
   <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
