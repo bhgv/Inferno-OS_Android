@@ -38,9 +38,9 @@ export PATH="$work/host-tools:$work/toolchain/bin:$PATH"
 CFLAGS='-O2 -g -DNDEBUG -fsanitize=undefined -fno-sanitize-recover=all' python3 "$core/libinterp/tests/tk-owners.py"
 CFLAGS='-O2 -g -DNDEBUG -fsanitize=undefined -fno-sanitize-recover=all' python3 "$core/libinterp/tests/tk-window-controls.py"
 # These fixtures use actual ARM32 pointers and Bionic, distinct from the host WORD32 model.
-CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG -DANDROID' \
+CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG -DANDROID -D__ANDROID_API__=17' \
   TK_OWNER_MODELS=32 TK_OWNER_CASE=top TK_OWNER_PLATFORM=Android/arm TK_OWNER_RUNNER=qemu-arm python3 "$core/libinterp/tests/tk-owners.py"
-CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG -DANDROID' \
+CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG -DANDROID -D__ANDROID_API__=17' \
   TK_OWNER_PLATFORM=Android/arm TK_OWNER_RUNNER=qemu-arm python3 "$core/libinterp/tests/tk-window-controls.py"
 ln -s "$work/toolchain" "$core/ndk_toolchain"
 renderer=framebuffer
