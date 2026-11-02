@@ -348,6 +348,7 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 LOGE("create pre amain");
 					if(ioa_startup_log() != 0)
                         __android_log_print(ANDROID_LOG_WARN, "Inferno Storage", "Cannot open /sdcard/Inferno/startup.log");
+                    fprintf(stderr, "Native FB renderer; logical=%dx%d; independent-top/display-owner fix 20261102\n", Xsize, Ysize);
 					amain();
 LOGE("create post amain");
 

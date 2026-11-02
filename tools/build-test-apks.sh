@@ -27,13 +27,21 @@ buildtools="$sdk/android-9"
 export LD_LIBRARY_PATH="$buildtools/lib64:${LD_LIBRARY_PATH:-}"
 core="$work/core"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin adf3a30f0c9200d939142d91a677bbba852340c3
+git -C "$core" fetch --depth 1 origin 1b66f1e52af8dbf4ba5ceb32d1e96dcf457dfe01
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
 printf '#!/bin/sh\nexec date +%%s\n' > "$work/host-tools/ndate"
 chmod +x "$work/host-tools/ndate"
 export PATH="$work/host-tools:$work/toolchain/bin:$PATH"
+# Exercise changed production ownership bodies before packaging either renderer.
+CFLAGS='-O2 -g -DNDEBUG -fsanitize=undefined -fno-sanitize-recover=all' python3 "$core/libinterp/tests/tk-owners.py"
+CFLAGS='-O2 -g -DNDEBUG -fsanitize=undefined -fno-sanitize-recover=all' python3 "$core/libinterp/tests/tk-window-controls.py"
+# These fixtures use actual ARM32 pointers and Bionic, distinct from the host WORD32 model.
+CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG' \
+  TK_OWNER_MODELS=32 TK_OWNER_CASE=top TK_OWNER_RUNNER=qemu-arm python3 "$core/libinterp/tests/tk-owners.py"
+CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG' \
+  TK_OWNER_RUNNER=qemu-arm python3 "$core/libinterp/tests/tk-window-controls.py"
 ln -s "$work/toolchain" "$core/ndk_toolchain"
 renderer=framebuffer
 if [ "$variant" = gles ]; then renderer=gles; fi
@@ -58,7 +66,7 @@ app="$workspace"
 if [ "$variant" = gles ]; then
   app="$work/gles"
   git clone --depth 1 https://github.com/bhgv/Inferno-OS_Android-Clutter3d.git "$app"
-  git -C "$app" fetch --depth 1 origin fd581f1282d6771b5f5d9a0f71dce9c9b085bd68
+  git -C "$app" fetch --depth 1 origin 284c5ecc837a9fec292a136173d23d7a77194fcc
   git -C "$app" checkout --detach FETCH_HEAD
   tar --no-same-owner -xzf "$app/install.tgz" -C "$app"
   python3 "$app/tools/rebuild-android-backends.py" --cc "$work/toolchain/bin/arm-linux-androideabi-gcc" --ar "$work/toolchain/bin/arm-linux-androideabi-ar"
@@ -102,11 +110,11 @@ import sys,xml.etree.ElementTree as E
 source,destination,variant=sys.argv[1:]
 E.register_namespace('android','http://schemas.android.com/apk/res/android')
 tree=E.parse(source);root=tree.getroot();a='{http://schemas.android.com/apk/res/android}'
-root.set('package','bhgv.vitanuova.inferno_os.'+variant+'test.windowfix20261101')
-root.set(a+'versionCode','20261101')
-root.set(a+'versionName','windowfix-2026-11-01')
+root.set('package','bhgv.vitanuova.inferno_os.'+variant+'test.windowfix20261102')
+root.set(a+'versionCode','20261102')
+root.set(a+'versionName','windowfix-2026-11-02')
 for node in root.iter():
-    if node.tag in ('application','activity'):node.set(a+'label','Inferno '+variant.upper()+' window test')
+    if node.tag in ('application','activity'):node.set(a+'label','Inferno '+variant.upper()+' window fix 20261102')
 tree.write(destination,encoding='utf-8',xml_declaration=True)
 PY
 jar="$(find "$sdk/platform" -name android.jar -print -quit)"
