@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 7e0b26b981b92d5b99f6205085e2b7c29c09cedf
+git -C "$core" fetch --depth 1 origin 4a910d74001e6868e35c7bc69a0d86afcdec4fdd
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)

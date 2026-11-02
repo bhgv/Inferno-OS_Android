@@ -6,7 +6,7 @@ startup admission. Native JIT command coverage alone does not establish that.
 The application runs only from /sdcard/Inferno; no private runtime tree or Java
 application code is introduced. The existing ARM32 FB/GLES packages are separate.
 
-The source pins Inferno7e0b26b981b92d5b99f6205085e2b7c29c09cedf and NDK r27c.
+The source pins Inferno4a910d74001e6868e35c7bc69a0d86afcdec4fdd and NDK r27c.
 Classic mk builds the real Android/arm64 runtime. Before signing, ARM64/Bionic
 QEMU runs the existing boot corpus,67 numeric-case sources and167 helper/result
 sources in interpreter and JIT, including active controls. Exact packaged-image
