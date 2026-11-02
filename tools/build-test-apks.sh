@@ -27,7 +27,7 @@ buildtools="$sdk/android-9"
 export LD_LIBRARY_PATH="$buildtools/lib64:${LD_LIBRARY_PATH:-}"
 core="$work/core"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 1b66f1e52af8dbf4ba5ceb32d1e96dcf457dfe01
+git -C "$core" fetch --depth 1 origin f9ea7ac0d47bfe16573fd77f99ca9c5e2f76d5da
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -38,10 +38,10 @@ export PATH="$work/host-tools:$work/toolchain/bin:$PATH"
 CFLAGS='-O2 -g -DNDEBUG -fsanitize=undefined -fno-sanitize-recover=all' python3 "$core/libinterp/tests/tk-owners.py"
 CFLAGS='-O2 -g -DNDEBUG -fsanitize=undefined -fno-sanitize-recover=all' python3 "$core/libinterp/tests/tk-window-controls.py"
 # These fixtures use actual ARM32 pointers and Bionic, distinct from the host WORD32 model.
-CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG' \
-  TK_OWNER_MODELS=32 TK_OWNER_CASE=top TK_OWNER_RUNNER=qemu-arm python3 "$core/libinterp/tests/tk-owners.py"
-CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG' \
-  TK_OWNER_RUNNER=qemu-arm python3 "$core/libinterp/tests/tk-window-controls.py"
+CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG -DANDROID' \
+  TK_OWNER_MODELS=32 TK_OWNER_CASE=top TK_OWNER_PLATFORM=Android/arm TK_OWNER_RUNNER=qemu-arm python3 "$core/libinterp/tests/tk-owners.py"
+CC="$work/toolchain/bin/arm-linux-androideabi-gcc" CFLAGS='-O2 -g -static -DNDEBUG -DANDROID' \
+  TK_OWNER_PLATFORM=Android/arm TK_OWNER_RUNNER=qemu-arm python3 "$core/libinterp/tests/tk-window-controls.py"
 ln -s "$work/toolchain" "$core/ndk_toolchain"
 renderer=framebuffer
 if [ "$variant" = gles ]; then renderer=gles; fi
