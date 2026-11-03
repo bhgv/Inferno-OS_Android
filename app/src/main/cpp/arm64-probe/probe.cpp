@@ -68,7 +68,7 @@ static int install_probe(AAssetManager *manager)
 {
     unsigned char buffer[1024], existing[1024];
     AAsset *asset = AAssetManager_open(manager, "native64/probe.dis64", AASSET_MODE_STREAMING);
-    const char *path = "/sdcard/Inferno/dis/native64-apk/series0090-probe.dis64";
+    const char *path = "/sdcard/Inferno/dis/native64-apk/series0091-probe.dis64";
     int fd, owned, count, ok = 1, saved = 0;
 
     if(asset == NULL){ errno = ENOENT; return 0; }
@@ -108,7 +108,7 @@ static void *run_probe(void *argument)
     char message[768];
     char *argv[] = {(char*)"android-arm64-fb", (char*)"-v", (char*)"-s", (char*)"-r",
         (char*)"/sdcard/Inferno", (char*)"-c", (char*)(INFERNO_PROBE_JIT ? "1" : "0"),
-        (char*)"-d", (char*)"/dis/native64-apk/series0090-probe.dis64", NULL};
+        (char*)"-d", (char*)"/dis/native64-apk/series0091-probe.dis64", NULL};
     (void)argument;
 
     status("ARM64 FB PROBE\nPREPARING /SDCARD/INFERNO\nNO PRIVATE RUNTIME DIRECTORY", 0);
