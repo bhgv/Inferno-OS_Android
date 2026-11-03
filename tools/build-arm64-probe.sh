@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 81385bb23436185ecd5922714899e73a2163e5cb
+git -C "$core" fetch --depth 1 origin 619d58bc88d265c5a4c22c96a642b3208ab68d25
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -48,7 +48,7 @@ python3 "$core/utils/tests/native64-loader-mode.py" --control | tee -a "$out/bio
 # Exercise the native64 module/managed-descriptor boundary on Bionic before GUI admission.
 # Registration identity tests and actual Sys handler tests are separate evidence.
 export NATIVE64_LIMBO="$work/host-tools/limbo"
-python3 "$core/utils/tests/native64-builtins.py" --sets | tee "$out/bionic-builtins.log"
+python3 "$core/utils/tests/native64-builtins.py" --sets --port-aliases | tee "$out/bionic-builtins.log"
 python3 "$core/utils/tests/native64-sys-init.py" --limbo "$NATIVE64_LIMBO" | tee "$out/bionic-sys-init.log"
 python3 "$core/utils/tests/native64-sys-register.py" --limbo "$NATIVE64_LIMBO" | tee "$out/bionic-sys-register.log"
 python3 "$core/utils/tests/native64-sys.py" --limbo "$NATIVE64_LIMBO" | tee "$out/bionic-sys.log"
