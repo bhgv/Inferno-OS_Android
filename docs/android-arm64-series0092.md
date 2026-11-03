@@ -20,3 +20,13 @@ source. These remain scalar FB probes, not native FT rendering/full AWM.
 
 Host launcher and shell checks pass. Fresh target results are pending; no0091
 result certifies this change. Full module/file-call ABI admission stays separate.
+
+## Corrected map-fixture boundary
+
+First run41594788023 compiled full consumers and passed initializer/maps and
+eight strict controls, then failed the legacy heap-map fixture: Android lib9
+allocator aliases renamed Type.free before its function-like tracker. No APK
+success is claimed from that run. Pin corrected core143fd9c218ea02ea106a64cc5b9b4a1fe4dc8347;
+only test alias handling changes from production05591a39. Host synthetic-alias
+UBSan passes both1072-case map models and initializer modules. A fresh Bionic
+build is required; source production fixes and0092 package identities stay.
