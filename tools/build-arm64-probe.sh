@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 4a910d74001e6868e35c7bc69a0d86afcdec4fdd
+git -C "$core" fetch --depth 1 origin 81385bb23436185ecd5922714899e73a2163e5cb
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -33,6 +33,19 @@ for tool in mk limbo iyacc decgen; do ln -s "$work/host-tools/$tool" "$core/Andr
 (cd "$core/emu/Android"; mk CONF=emu-scalar "$core/Android/arm64/lib/emu.a" KERNDATE=1793577600)
 llvm="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
 python3 tests/arm64-probe.py
+# Execute the actual current binding/loader bodies against Bionic, independently of APK startup.
+# These static fixtures cover both WORD models but do not imply shared WORD64 wire execution.
+export CC="$llvm/aarch64-linux-android29-clang"
+export NATIVE64_ARCH=arm64
+export NATIVE64_RUNNER=qemu-aarch64
+export NATIVE64_CFLAGS='-O3 -g -DNDEBUG -fno-strict-aliasing -static'
+python3 "$core/utils/tests/native64-disc-binding.py" | tee "$out/bionic-binding.log"
+for control in mode jit image; do
+    python3 "$core/utils/tests/native64-disc-binding.py" --control "$control" | tee -a "$out/bionic-binding.log"
+done
+python3 "$core/utils/tests/native64-loader-mode.py" | tee "$out/bionic-loader-mode.log"
+python3 "$core/utils/tests/native64-loader-mode.py" --control | tee -a "$out/bionic-loader-mode.log"
+unset CC NATIVE64_ARCH NATIVE64_RUNNER NATIVE64_CFLAGS
 "$llvm/llvm-nm" -g --defined-only "$core/Android/arm64/lib/lib9.a" > "$out/converter-symbols.txt"
 python3 - "$out/converter-symbols.txt" <<'PYCORE'
 from pathlib import Path
@@ -117,15 +130,15 @@ import sys,xml.etree.ElementTree as E
 jit,destination=sys.argv[1:]
 E.register_namespace('android','http://schemas.android.com/apk/res/android')
 tree=E.parse('app/src/main/cpp/arm64-probe/AndroidManifest.xml');root=tree.getroot();a='{http://schemas.android.com/apk/res/android}'
-root.set('package','bhgv.vitanuova.inferno_os.arm64fbprobe.series0067.jit'+jit)
-root.find('application').set(a+'label','Inferno ARM64 0067 '+('JIT' if jit=='1' else 'C'))
+root.set('package','bhgv.vitanuova.inferno_os.arm64fbprobe.series0087.jit'+jit)
+root.find('application').set(a+'label','Inferno ARM64 0087 '+('JIT' if jit=='1' else 'C'))
 tree.write(destination,encoding='utf-8',xml_declaration=True)
 PY
     "$buildtools/aapt" package -f -M "$work/AndroidManifest.xml" -S app/src/main/res -A "$assets" -I "$jar" \
         --min-sdk-version 21 --target-sdk-version 28 -F "$work/unsigned-$jit.apk"
     (cd "$package"; zip -q -0 "$work/unsigned-$jit.apk" lib/arm64-v8a/libinferno_os_app.so)
     "$buildtools/zipalign" -f 4 "$work/unsigned-$jit.apk" "$work/aligned-$jit.apk"
-    apk="$out/Inferno-FB-arm64-v8a-series0067-jit$jit.apk"
+    apk="$out/Inferno-FB-arm64-v8a-series0087-jit$jit.apk"
     java -jar "$buildtools/lib/apksigner.jar" sign --ks "$work/test.jks" --ks-key-alias androiddebugkey \
         --ks-pass pass:android --key-pass pass:android --out "$apk" "$work/aligned-$jit.apk"
     java -jar "$buildtools/lib/apksigner.jar" verify --verbose "$apk"
