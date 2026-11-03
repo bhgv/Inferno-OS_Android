@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin efbf604235d57947141f1872034829d12ae81151
+git -C "$core" fetch --depth 1 origin 696234e28f209de3a0e6f65d5edc1026b0262800
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -57,7 +57,7 @@ done
 python3 "$core/libinterp/tests/loader-snapshots.py" | tee "$out/bionic-loader-snapshots.log"
 # Exercise the actual native font bridges and vendored renderer through Bionic libc I/O.
 python3 "$core/utils/tests/native64-freetype.py" --engine | tee "$out/bionic-freetype-bridge.log"
-for control in vm-transform native-transform pitch limits result; do
+for control in vm-transform native-transform pitch limits result sort; do
     python3 "$core/utils/tests/native64-freetype.py" --control "$control" | tee -a "$out/bionic-freetype-bridge.log"
 done
 # Validate native font/public-reference maps and both graphical descriptor factories.
