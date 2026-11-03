@@ -20,3 +20,10 @@ code or private runtime tree is added. The runtime path remains /sdcard/Inferno.
 Local host launcher tests and shell syntax must pass before publication. NDK/APK
 and Bionic results are pending the source-pinned GitHub build; Linux sanitizer
 results are separate and do not certify this packaging.
+
+First NDK run41555685980 compiled the current core successfully, then rejected
+the new isolated binding fixture: it selected Linux declarations instead of the
+Android port declarations (missing Bionic ulong/ushort aliases). The fixture
+compiler flags now select the same Android headers and native64 target prelude
+as the classic-mk core. Compiler errors are not accepted as semantic controls.
+A fresh source-pinned run is required; the failed run produced no APK pair.

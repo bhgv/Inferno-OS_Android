@@ -38,7 +38,7 @@ python3 tests/arm64-probe.py
 export CC="$llvm/aarch64-linux-android29-clang"
 export NATIVE64_ARCH=arm64
 export NATIVE64_RUNNER=qemu-aarch64
-export NATIVE64_CFLAGS='-O3 -g -DNDEBUG -fno-strict-aliasing -static'
+export NATIVE64_CFLAGS="-O3 -g -DNDEBUG -fno-strict-aliasing -static -DANDROID -DLINUX_ARM64 -include $core/include/native64-target.h -I$core/Android/arm64/include -I$core/Android/arm/include"
 python3 "$core/utils/tests/native64-disc-binding.py" | tee "$out/bionic-binding.log"
 for control in mode jit image; do
     python3 "$core/utils/tests/native64-disc-binding.py" --control "$control" | tee -a "$out/bionic-binding.log"
