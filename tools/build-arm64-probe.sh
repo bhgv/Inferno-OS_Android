@@ -45,6 +45,14 @@ for control in mode jit image; do
 done
 python3 "$core/utils/tests/native64-loader-mode.py" | tee "$out/bionic-loader-mode.log"
 python3 "$core/utils/tests/native64-loader-mode.py" --control | tee -a "$out/bionic-loader-mode.log"
+# Exercise the native64 module/managed-descriptor boundary on Bionic before GUI admission.
+# Registration identity tests and actual Sys handler tests are separate evidence.
+export NATIVE64_LIMBO="$work/host-tools/limbo"
+python3 "$core/utils/tests/native64-builtins.py" --sets | tee "$out/bionic-builtins.log"
+python3 "$core/utils/tests/native64-sys-init.py" --limbo "$NATIVE64_LIMBO" | tee "$out/bionic-sys-init.log"
+python3 "$core/utils/tests/native64-sys-register.py" --limbo "$NATIVE64_LIMBO" | tee "$out/bionic-sys-register.log"
+python3 "$core/utils/tests/native64-sys.py" --limbo "$NATIVE64_LIMBO" | tee "$out/bionic-sys.log"
+unset NATIVE64_LIMBO
 unset CC NATIVE64_ARCH NATIVE64_RUNNER NATIVE64_CFLAGS
 "$llvm/llvm-nm" -g --defined-only "$core/Android/arm64/lib/lib9.a" > "$out/converter-symbols.txt"
 python3 - "$out/converter-symbols.txt" <<'PYCORE'
