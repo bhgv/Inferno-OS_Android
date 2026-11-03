@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 619d58bc88d265c5a4c22c96a642b3208ab68d25
+git -C "$core" fetch --depth 1 origin d69a872137f23d6b16e4a2db3e6a178e83931757
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -45,6 +45,11 @@ for control in mode jit image; do
 done
 python3 "$core/utils/tests/native64-loader-mode.py" | tee "$out/bionic-loader-mode.log"
 python3 "$core/utils/tests/native64-loader-mode.py" --control | tee -a "$out/bionic-loader-mode.log"
+# Exercise actual Draw wrapper descriptors and rollback without claiming GUI registration.
+python3 "$core/utils/tests/native64-draw-init.py" | tee "$out/bionic-draw-init.log"
+for control in retirement publication registration; do
+    python3 "$core/utils/tests/native64-draw-init.py" --control "$control" | tee -a "$out/bionic-draw-init.log"
+done
 # Exercise the native64 module/managed-descriptor boundary on Bionic before GUI admission.
 # Registration identity tests and actual Sys handler tests are separate evidence.
 export NATIVE64_LIMBO="$work/host-tools/limbo"
@@ -138,15 +143,15 @@ import sys,xml.etree.ElementTree as E
 jit,destination=sys.argv[1:]
 E.register_namespace('android','http://schemas.android.com/apk/res/android')
 tree=E.parse('app/src/main/cpp/arm64-probe/AndroidManifest.xml');root=tree.getroot();a='{http://schemas.android.com/apk/res/android}'
-root.set('package','bhgv.vitanuova.inferno_os.arm64fbprobe.series0087.jit'+jit)
-root.find('application').set(a+'label','Inferno ARM64 0087 '+('JIT' if jit=='1' else 'C'))
+root.set('package','bhgv.vitanuova.inferno_os.arm64fbprobe.series0090.jit'+jit)
+root.find('application').set(a+'label','Inferno ARM64 0090 '+('JIT' if jit=='1' else 'C'))
 tree.write(destination,encoding='utf-8',xml_declaration=True)
 PY
     "$buildtools/aapt" package -f -M "$work/AndroidManifest.xml" -S app/src/main/res -A "$assets" -I "$jar" \
         --min-sdk-version 21 --target-sdk-version 28 -F "$work/unsigned-$jit.apk"
     (cd "$package"; zip -q -0 "$work/unsigned-$jit.apk" lib/arm64-v8a/libinferno_os_app.so)
     "$buildtools/zipalign" -f 4 "$work/unsigned-$jit.apk" "$work/aligned-$jit.apk"
-    apk="$out/Inferno-FB-arm64-v8a-series0087-jit$jit.apk"
+    apk="$out/Inferno-FB-arm64-v8a-series0090-jit$jit.apk"
     java -jar "$buildtools/lib/apksigner.jar" sign --ks "$work/test.jks" --ks-key-alias androiddebugkey \
         --ks-pass pass:android --key-pass pass:android --out "$apk" "$work/aligned-$jit.apk"
     java -jar "$buildtools/lib/apksigner.jar" verify --verbose "$apk"
