@@ -30,3 +30,17 @@ success is claimed from that run. Pin corrected core143fd9c218ea02ea106a64cc5b9b
 only test alias handling changes from production05591a39. Host synthetic-alias
 UBSan passes both1072-case map models and initializer modules. A fresh Bionic
 build is required; source production fixes and0092 package identities stay.
+
+
+## Corrected target result
+
+Android41596693062 succeeds at launcher8d853fb5e16c636012756bee71f5c33b09f6c95e,
+pinning core143fd9c218ea02ea106a64cc5b9b4a1fe4dc8347. Artifact13212528423 ZIP
+SHA2561b04fdb98d87d1cd5fbfa334d463f8534db39825f7d6d83ac211724b320e44a5
+was independently checked, including integrity, both APK sidecars, exact core
+pin, ELF64/AArch64, 16KiB LOAD alignment, no DEX and unchanged scalar bytes.
+Both APKs are4621134 bytes. JIT0 SHA256:
+c9f65348f5a173737f12e4a5470b7f3a637d5c82de1660169d6c08fec3ee2c09.
+JIT1 SHA256:
+72d062568dcc33af16a33aadd74c619ac738d957c3c4956a861b3a8a8d4963fd.
+These are scalar probes, not AWM/physical-phone GUI certification.
