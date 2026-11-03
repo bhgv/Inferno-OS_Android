@@ -18,7 +18,7 @@ fi
 grep 'Pkg.Revision = 27.2.12479018' "$ndk/source.properties"
 cp "$ndk/source.properties" "$out/ndk.txt"
 git clone --depth 1 --branch experiment https://github.com/bhgv/Inferno-OS-bhgv.git "$core"
-git -C "$core" fetch --depth 1 origin 83b5fb23092f31b7aa2f15d73181fa6c7ebb983a
+git -C "$core" fetch --depth 1 origin 05591a391106947421f7e1a0a148b23789fa2397
 git -C "$core" checkout --detach FETCH_HEAD
 mkdir -p "$work/host-tools"
 (cd "$core"; MKBOOTSTRAP_LIMBO=1 MKBOOTSTRAP_BINDIR="$work/host-tools" sh makemk.sh)
@@ -55,6 +55,17 @@ for control in width bounds; do
     python3 "$core/utils/tests/native64-loader-branch.py" --control "$control" | tee -a "$out/bionic-loader-branch.log"
 done
 python3 "$core/libinterp/tests/loader-snapshots.py" | tee "$out/bionic-loader-snapshots.log"
+# Validate native font/public-reference maps and both graphical descriptor factories.
+for module in prefab freetype; do
+    python3 "$core/utils/tests/native64-graphics-init.py" --module "$module" --limbo "$work/host-tools/limbo" | tee "$out/bionic-graphics-$module.log"
+    for control in retirement publication registration; do
+        python3 "$core/utils/tests/native64-graphics-init.py" --module "$module" --control "$control" | tee -a "$out/bionic-graphics-$module.log"
+    done
+done
+for control in face-map glyph-map; do
+    python3 "$core/utils/tests/native64-graphics-init.py" --module freetype --control "$control" | tee -a "$out/bionic-graphics-freetype.log"
+done
+python3 "$core/libinterp/tests/gui-type-maps.py" | tee "$out/bionic-gui-type-maps.log"
 # Exercise actual Draw wrapper descriptors and rollback without claiming GUI registration.
 python3 "$core/utils/tests/native64-draw-init.py" | tee "$out/bionic-draw-init.log"
 for control in retirement publication registration; do
@@ -153,15 +164,15 @@ import sys,xml.etree.ElementTree as E
 jit,destination=sys.argv[1:]
 E.register_namespace('android','http://schemas.android.com/apk/res/android')
 tree=E.parse('app/src/main/cpp/arm64-probe/AndroidManifest.xml');root=tree.getroot();a='{http://schemas.android.com/apk/res/android}'
-root.set('package','bhgv.vitanuova.inferno_os.arm64fbprobe.series0091.jit'+jit)
-root.find('application').set(a+'label','Inferno ARM64 0091 '+('JIT' if jit=='1' else 'C'))
+root.set('package','bhgv.vitanuova.inferno_os.arm64fbprobe.series0092.jit'+jit)
+root.find('application').set(a+'label','Inferno ARM64 0092 '+('JIT' if jit=='1' else 'C'))
 tree.write(destination,encoding='utf-8',xml_declaration=True)
 PY
     "$buildtools/aapt" package -f -M "$work/AndroidManifest.xml" -S app/src/main/res -A "$assets" -I "$jar" \
         --min-sdk-version 21 --target-sdk-version 28 -F "$work/unsigned-$jit.apk"
     (cd "$package"; zip -q -0 "$work/unsigned-$jit.apk" lib/arm64-v8a/libinferno_os_app.so)
     "$buildtools/zipalign" -f 4 "$work/unsigned-$jit.apk" "$work/aligned-$jit.apk"
-    apk="$out/Inferno-FB-arm64-v8a-series0091-jit$jit.apk"
+    apk="$out/Inferno-FB-arm64-v8a-series0092-jit$jit.apk"
     java -jar "$buildtools/lib/apksigner.jar" sign --ks "$work/test.jks" --ks-key-alias androiddebugkey \
         --ks-pass pass:android --key-pass pass:android --out "$apk" "$work/aligned-$jit.apk"
     java -jar "$buildtools/lib/apksigner.jar" verify --verbose "$apk"

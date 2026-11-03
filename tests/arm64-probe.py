@@ -26,7 +26,7 @@ def function(name):
 # Run real stream and descriptor operations while mocking only Android assets and visible status publication.
 def main():
     installer = function('install_probe')
-    installer = installer.replace('"/sdcard/Inferno/dis/native64-apk/series0091-probe.dis64"','fixture_path')
+    installer = installer.replace('"/sdcard/Inferno/dis/native64-apk/series0092-probe.dis64"','fixture_path')
     checker = function('check_result')
     directory = function('directory')
     starter = function('start_probe')
