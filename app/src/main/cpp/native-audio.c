@@ -109,7 +109,7 @@ static SLAndroidSimpleBufferQueueItf recorderBufferQueue;
 #define RECORDER_FRAMES (44100 * 1)
 static short recorderBuffer1[RECORDER_FRAMES];
 static short recorderBuffer2[RECORDER_FRAMES];
-static short** recorderBuffers[] = {
+static short* recorderBuffers[] = {
 	recorderBuffer1,
 	recorderBuffer2
 };
