@@ -2,6 +2,10 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 option(INFERNO_BUNDLE_RUNTIME "Provision bundled runtime into /sdcard/Inferno" OFF)
+option(INFERNO_PRIVATE_RUNTIME "Provision the bundled runtime in NativeActivity internal storage" OFF)
+if(INFERNO_PRIVATE_RUNTIME AND NOT INFERNO_BUNDLE_RUNTIME)
+    message(FATAL_ERROR "INFERNO_PRIVATE_RUNTIME requires a bundled runtime")
+endif()
 
 
 set(CMAKE_VERBOSE_MAKEFILE on)
@@ -152,4 +156,8 @@ target_link_libraries(inferno_os_app
 
 if(INFERNO_BUNDLE_RUNTIME)
     target_compile_definitions(inferno_os_app PRIVATE INFERNO_BUNDLE_RUNTIME=1)
+endif()
+if(INFERNO_PRIVATE_RUNTIME)
+    target_compile_definitions(inferno_os_app PRIVATE INFERNO_PRIVATE_RUNTIME=1)
+    set_property(TARGET inferno_os_app APPEND_STRING PROPERTY LINK_FLAGS " -Wl,--wrap=inferno_android_root")
 endif()

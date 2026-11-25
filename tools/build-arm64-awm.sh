@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the panel-free native64 AWM NativeActivity against a selected Inferno core.
+# Build the native64 AWM NativeActivity against a selected Inferno core.
 set -euo pipefail
 
 if [ "$#" -ne 4 ]; then

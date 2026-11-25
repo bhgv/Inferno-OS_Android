@@ -321,7 +321,7 @@ void ioa_showsplash(){
 } // extern "C"
 
 
-/* Validate or provision the shared tree before the first emulator startup. */
+/* Prepare the selected runtime before the first emulator startup. */
 static void
 ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 {
@@ -332,13 +332,25 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 				if(xscreendata == NULL){
                     Xsize = ANativeWindow_getWidth(app->window);
                     Ysize = ANativeWindow_getHeight(app->window);
-                    if(ioa_prepare_storage_progress(app->activity->assetManager, ioa_fb_storage_progress, app) != 0){
+#if INFERNO_PRIVATE_RUNTIME
+                    int prepared = ioa_prepare_private_storage(app->activity->internalDataPath,
+                            app->activity->assetManager, ioa_fb_storage_progress, app);
+#else
+                    int prepared = ioa_prepare_storage_progress(app->activity->assetManager,
+                            ioa_fb_storage_progress, app);
+#endif
+                    if(prepared != 0){
                         int saved = errno;
                         char message[768];
+#if INFERNO_PRIVATE_RUNTIME
+                        snprintf(message, sizeof(message),
+                            "STARTUP FAILED. ERROR %d\nCANNOT PREPARE THE BUNDLED INFERNO DESKTOP.\nCHECK FREE SPACE AND REOPEN INFERNO.", saved);
+#else
                         snprintf(message, sizeof(message),
                             saved == EACCES || saved == EPERM ?
                             "STORAGE ACCESS DENIED. ERROR %d\nCANNOT CREATE /SDCARD/INFERNO\n\nANDROID SETTINGS - APPS - INFERNO FB - PERMISSIONS: ALLOW FILES / STORAGE.\n\nALSO CHECK SPECIAL APP ACCESS - ALL FILES ACCESS.\n\nTHEN CLOSE AND REOPEN INFERNO." :
                             "STARTUP FAILED. ERROR %d\nCHECK /SDCARD/INFERNO STRUCTURE, FREE SPACE AND BUNDLED FILES.\nTHEN CLOSE AND REOPEN INFERNO.", saved);
+#endif
                         ioa_status_screen(app, message, 0);
                         __android_log_print(ANDROID_LOG_ERROR, "Inferno Storage", "%s", message);
                         break;
@@ -347,7 +359,7 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 
 LOGE("create pre amain");
 					if(ioa_startup_log() != 0)
-                        __android_log_print(ANDROID_LOG_WARN, "Inferno Storage", "Cannot open /sdcard/Inferno/startup.log");
+                        __android_log_print(ANDROID_LOG_WARN, "Inferno Storage", "Cannot open Inferno startup.log");
                     fprintf(stderr, "Native FB renderer; logical=%dx%d; independent-top/display-owner fix 20261102\n", Xsize, Ysize);
 					amain();
 LOGE("create post amain");
