@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include "inferno_storage.h"
+#include "inferno_touch.h"
 
 #include <cstdlib>
 #include <climits>
@@ -27,12 +28,6 @@
 #define  LOGI(...)  //__android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGW(...)  //__android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  //__android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-
-
-#define MBUTS_ACCORD_OTHER_KEY_BORDER  1000000000
-
-typedef unsigned long long uint64;
-typedef unsigned int uint32;
 
 
 const int kFRAME_DISPLAY_TIME = 1;
@@ -109,14 +104,18 @@ class Engine {
   public:
     explicit Engine(android_app* app) :
                 app_(app),
-                animating_(false) {
+                animating_(false),
+                touch_{} {
         memset(&frameStartTime_, 0, sizeof(frameStartTime_));
         memset(&smallFrameStartTime_, 0, sizeof(smallFrameStartTime_));
     }
 
     ~Engine() {}
 
-    struct android_app* AndroidApp(void) const { return app_; }
+    int Touch(AInputEvent* event) {
+        return ioa_touch_motion(&touch_, event, Xsize, Ysize, xmouse_btn);
+    }
+    void CancelTouch(void) { ioa_touch_reset(&touch_, xmouse_btn); }
     void StartAnimation(bool start) { animating_ = start; }
     bool IsAnimating(void) const { return animating_; }
     void TerminateDisplay(void) { 
@@ -136,102 +135,25 @@ class Engine {
     void UpdateFrameBuffer(ANativeWindow_Buffer* buf, uint8_t* src);
     struct android_app* app_;
     bool animating_;
+    IoaTouch touch_;
     struct timespec frameStartTime_;
     struct timespec smallFrameStartTime_;
 };
 
 
-static int32_t ProcessAndroidInput(struct android_app *app, AInputEvent *event) {
-	static int mbtns = 0;
-	static int x, y;
-	static int id;
-	static uint64 first_tap_time = 0;
+static int32_t
+ProcessAndroidInput(struct android_app* app, AInputEvent* event)
+{
+    if(AInputEvent_getType(event) != AINPUT_EVENT_TYPE_MOTION)
+        return 0;
+    if(app->window == NULL || xscreendata == NULL)
+        return 1;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
-	switch(AInputEvent_getType(event)){
-		case AINPUT_EVENT_TYPE_MOTION:
-			{
-                if(app->window == NULL || xscreendata == NULL)
-                    return 1;
-				int32_t action = AMotionEvent_getAction( event ) & AMOTION_EVENT_ACTION_MASK;
-				switch(action){
-					case AMOTION_EVENT_ACTION_MOVE:
-						{
-							x = AMotionEvent_getX( event, 0 );
-							y = AMotionEvent_getY( event, 0 );
-LOGI("m move X=%d, Y=%d, mbtns=%d", x, y, mbtns );
-							xmouse_btn(x, y, mbtns);
-						}
-						break;
+    if(!engine->Touch(event))
+        return 0;
 
-					case AMOTION_EVENT_ACTION_DOWN:
-						{
-							uint64 tap_time = AMotionEvent_getEventTime(event);
-
-							mbtns = AMotionEvent_getPointerCount(event);
-							if(mbtns == 1){
-								id = AMotionEvent_getPointerId(event, 0);
-								first_tap_time = tap_time;
-								x = AMotionEvent_getX(event, 0);
-								y = AMotionEvent_getY(event, 0);
-							}else //if(tap_time - first_tap_time > MBUTS_ACCORD_OTHER_KEY_BORDER)
-							{
-								xmouse_btn(x, y, 0);
-							}
-LOGI("m touch X=%d, Y=%d, mbtns=%d, t=%d:%d", x, y, mbtns, (uint32)(tap_time>>32), (uint32)tap_time);
-							xmouse_btn(x, y, mbtns);
-							//return 1;
-						}
-						break;
-						
-					case AMOTION_EVENT_ACTION_POINTER_DOWN:
-						{
-							uint64 tap_time = AMotionEvent_getEventTime(event);
-							if(tap_time - first_tap_time > MBUTS_ACCORD_OTHER_KEY_BORDER){
-								xmouse_btn(x, y, 0);
-							}
-							//x = AMotionEvent_getX(event, 0);
-							//y = AMotionEvent_getY(event, 0);
-//								xmouse_btn(x, y, 0);
-							
-							mbtns = AMotionEvent_getPointerCount(event);
-LOGI("m multi( %d )touch X=%d, Y=%d, dt=%d", mbtns, x, y, tap_time - first_tap_time);
-							xmouse_btn(x, y, 0);
-							xmouse_btn(x, y, mbtns);
-						}
-						break;
-
-                    case AMOTION_EVENT_ACTION_CANCEL:
-                        xmouse_btn(x, y, 0);
-                        mbtns = 0;
-                        break;
-					case AMOTION_EVENT_ACTION_UP:
-						{
-							if( id == AMotionEvent_getPointerId(event, 0) ){
-								x = AMotionEvent_getX(event, 0);
-								y = AMotionEvent_getY(event, 0);
-LOGI("m un touch X=%d, Y=%d, mbtns=%d", x, y, mbtns );
-								xmouse_btn(x, y, 0);
-								mbtns = 0;
-							}
-						}
-						break;
-
-				};
-        		engine->StartAnimation(true);
-        		return 1;
-    		}
-
-		case AINPUT_EVENT_TYPE_KEY:
-			{
-LOGI("Key event: action=%d keyCode=%d metaState=0x%x",
-		                AKeyEvent_getAction(event),
-		                AKeyEvent_getKeyCode(event),
-		                AKeyEvent_getMetaState(event));
-				break;
-			}
-    }
-
-    return 0;
+    engine->StartAnimation(true);
+    return 1;
 }
 
 
@@ -361,12 +283,12 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
             }
             break;
         case APP_CMD_TERM_WINDOW:
+            engine->CancelTouch();
             engine->TerminateDisplay();
             break;
         case APP_CMD_LOST_FOCUS:
             engine->StartAnimation(false);
-            if(xscreendata != NULL)
-                xmouse_btn(0, 0, 0);
+            engine->CancelTouch();
             break;
         case APP_CMD_WINDOW_REDRAW_NEEDED:
         case APP_CMD_WINDOW_RESIZED:

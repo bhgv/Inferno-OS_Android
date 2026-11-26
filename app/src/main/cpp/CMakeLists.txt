@@ -117,6 +117,7 @@ add_library(native-audio STATIC native-audio.c)
 add_library(inferno_os_app SHARED
     inferno_os_app.cpp
     inferno_storage.c
+    inferno_touch.c
 )
 
 
