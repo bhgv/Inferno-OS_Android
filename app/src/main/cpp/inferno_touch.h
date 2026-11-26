@@ -23,6 +23,15 @@ typedef struct {
 int ioa_touch_motion(IoaTouch*, const AInputEvent*, int width, int height, IoaPointer*);
 void ioa_touch_reset(IoaTouch*, IoaPointer*);
 
+typedef struct {
+	IoaTouch touch;
+	IoaTouch mouse;
+	float wheel;
+} IoaInput;
+
+int ioa_pointer_motion(IoaInput*, const AInputEvent*, int width, int height, IoaPointer*);
+void ioa_pointer_reset(IoaInput*, IoaPointer*);
+
 #ifdef __cplusplus
 }
 #endif

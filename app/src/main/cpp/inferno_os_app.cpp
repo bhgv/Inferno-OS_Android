@@ -105,17 +105,17 @@ class Engine {
     explicit Engine(android_app* app) :
                 app_(app),
                 animating_(false),
-                touch_{} {
+                pointer_{} {
         memset(&frameStartTime_, 0, sizeof(frameStartTime_));
         memset(&smallFrameStartTime_, 0, sizeof(smallFrameStartTime_));
     }
 
     ~Engine() {}
 
-    int Touch(AInputEvent* event) {
-        return ioa_touch_motion(&touch_, event, Xsize, Ysize, xmouse_btn);
+    int PointerMotion(AInputEvent* event) {
+        return ioa_pointer_motion(&pointer_, event, Xsize, Ysize, xmouse_btn);
     }
-    void CancelTouch(void) { ioa_touch_reset(&touch_, xmouse_btn); }
+    void CancelPointer(void) { ioa_pointer_reset(&pointer_, xmouse_btn); }
     void StartAnimation(bool start) { animating_ = start; }
     bool IsAnimating(void) const { return animating_; }
     void TerminateDisplay(void) { 
@@ -135,7 +135,7 @@ class Engine {
     void UpdateFrameBuffer(ANativeWindow_Buffer* buf, uint8_t* src);
     struct android_app* app_;
     bool animating_;
-    IoaTouch touch_;
+    IoaInput pointer_;
     struct timespec frameStartTime_;
     struct timespec smallFrameStartTime_;
 };
@@ -149,7 +149,7 @@ ProcessAndroidInput(struct android_app* app, AInputEvent* event)
     if(app->window == NULL || xscreendata == NULL)
         return 1;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
-    if(!engine->Touch(event))
+    if(!engine->PointerMotion(event))
         return 0;
 
     engine->StartAnimation(true);
@@ -283,12 +283,12 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
             }
             break;
         case APP_CMD_TERM_WINDOW:
-            engine->CancelTouch();
+            engine->CancelPointer();
             engine->TerminateDisplay();
             break;
         case APP_CMD_LOST_FOCUS:
             engine->StartAnimation(false);
-            engine->CancelTouch();
+            engine->CancelPointer();
             break;
         case APP_CMD_WINDOW_REDRAW_NEEDED:
         case APP_CMD_WINDOW_RESIZED:

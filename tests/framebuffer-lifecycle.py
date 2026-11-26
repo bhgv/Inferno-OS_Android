@@ -22,7 +22,7 @@ enum {APP_CMD_INIT_WINDOW,APP_CMD_TERM_WINDOW,APP_CMD_LOST_FOCUS,APP_CMD_GAINED_
 struct Window {int width,height;};
 struct ANativeActivity {void *assetManager;};
 struct android_app {void *userData;Window *window;ANativeActivity *activity;};
-static int Xsize,Ysize,boots,prepares,terminates,updates,touch_resets,storage_calls,errors;
+static int Xsize,Ysize,boots,prepares,terminates,updates,pointer_resets,storage_calls,errors;
 static unsigned char pixel,*xscreendata;
 static void *assetManager;
 class Engine {
@@ -30,7 +30,7 @@ class Engine {
 public:
     bool active;
     Engine(android_app *a):app(a),active(false){}
-    void CancelTouch(){touch_resets++;}
+    void CancelPointer(){pointer_resets++;}
     void PrepareDrawing(){prepares++;}
     void TerminateDisplay(){terminates++;active=false;}
     void StartAnimation(bool value){active=value;}
@@ -69,12 +69,12 @@ int main()
     ProcessAndroidCmd(&app,APP_CMD_GAINED_FOCUS);
     if(boots!=1||Xsize!=320||Ysize!=480||!engine.active)std::abort();
     ProcessAndroidCmd(&app,APP_CMD_LOST_FOCUS);
-    if(engine.active||touch_resets!=1)std::abort();
+    if(engine.active||pointer_resets!=1)std::abort();
     ProcessAndroidCmd(&app,APP_CMD_GAINED_FOCUS);
     if(!engine.active||updates!=2)std::abort();
     app.window=NULL;ProcessAndroidCmd(&app,APP_CMD_TERM_WINDOW);
     ProcessAndroidCmd(&app,APP_CMD_GAINED_FOCUS);
-    if(terminates!=1||touch_resets!=2||engine.active)std::abort();
+    if(terminates!=1||pointer_resets!=2||engine.active)std::abort();
     window.width=480;window.height=280;app.window=&window;
     ProcessAndroidCmd(&app,APP_CMD_INIT_WINDOW);
     if(boots!=1||storage_calls!=2||Xsize!=320||Ysize!=480||prepares!=2||!engine.active)std::abort();
