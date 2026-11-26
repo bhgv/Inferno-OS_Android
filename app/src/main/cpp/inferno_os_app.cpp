@@ -46,6 +46,7 @@ extern "C" {
 
 	extern void amain();
 	extern void xmouse_btn(int x, int y, int btn);
+	extern int xkbd_key(int code, int meta, int down);
 	extern void xexpose();
 }
 
@@ -144,14 +145,20 @@ class Engine {
 static int32_t
 ProcessAndroidInput(struct android_app* app, AInputEvent* event)
 {
-    if(AInputEvent_getType(event) != AINPUT_EVENT_TYPE_MOTION)
-        return 0;
+    int type = AInputEvent_getType(event);
     if(app->window == NULL || xscreendata == NULL)
-        return 1;
+        return type == AINPUT_EVENT_TYPE_MOTION;
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
-    if(!engine->PointerMotion(event))
+    if(type == AINPUT_EVENT_TYPE_KEY){
+        int action = AKeyEvent_getAction(event);
+        if(action != AKEY_EVENT_ACTION_DOWN && action != AKEY_EVENT_ACTION_UP)
+            return 0;
+        if(!xkbd_key(AKeyEvent_getKeyCode(event), AKeyEvent_getMetaState(event),
+                    action == AKEY_EVENT_ACTION_DOWN))
+            return 0;
+    }else if(type != AINPUT_EVENT_TYPE_MOTION || !engine->PointerMotion(event)){
         return 0;
-
+    }
     engine->StartAnimation(true);
     return 1;
 }
