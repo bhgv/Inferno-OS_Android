@@ -321,66 +321,43 @@ void ioa_showsplash(){
 } // extern "C"
 
 
-/* Prepare the selected runtime before the first emulator startup. */
+/* Validate or provision the shared tree before the first emulator startup. */
 static void
 ProcessAndroidCmd(struct android_app *app, int32_t cmd)
 {
     Engine* engine = reinterpret_cast<Engine*>(app->userData);
     switch (cmd) {
         case APP_CMD_INIT_WINDOW:
-            if (engine->AndroidApp()->window != NULL) {
-				if(xscreendata == NULL){
+        case APP_CMD_GAINED_FOCUS:
+            if (app->window != NULL) {
+                bool prepareSurface = cmd == APP_CMD_INIT_WINDOW || xscreendata == NULL;
+                if (xscreendata == NULL) {
                     Xsize = ANativeWindow_getWidth(app->window);
                     Ysize = ANativeWindow_getHeight(app->window);
-#if INFERNO_PRIVATE_RUNTIME
-                    int prepared = ioa_prepare_private_storage(app->activity->internalDataPath,
-                            app->activity->assetManager, ioa_fb_storage_progress, app);
-#else
-                    int prepared = ioa_prepare_storage_progress(app->activity->assetManager,
-                            ioa_fb_storage_progress, app);
-#endif
-                    if(prepared != 0){
+                    if (ioa_prepare_storage_progress(app->activity->assetManager, ioa_fb_storage_progress, app) != 0) {
                         int saved = errno;
                         char message[768];
-#if INFERNO_PRIVATE_RUNTIME
-                        snprintf(message, sizeof(message),
-                            "STARTUP FAILED. ERROR %d\nCANNOT PREPARE THE BUNDLED INFERNO DESKTOP.\nCHECK FREE SPACE AND REOPEN INFERNO.", saved);
-#else
                         snprintf(message, sizeof(message),
                             saved == EACCES || saved == EPERM ?
-                            "STORAGE ACCESS DENIED. ERROR %d\nCANNOT CREATE /SDCARD/INFERNO\n\nANDROID SETTINGS - APPS - INFERNO FB - PERMISSIONS: ALLOW FILES / STORAGE.\n\nALSO CHECK SPECIAL APP ACCESS - ALL FILES ACCESS.\n\nTHEN CLOSE AND REOPEN INFERNO." :
+                            "STORAGE ACCESS DENIED. ERROR %d\nCANNOT ACCESS /SDCARD/INFERNO\n\nANDROID SETTINGS - APPS - INFERNO FB - PERMISSIONS: ALLOW FILES / STORAGE.\n\nALSO CHECK SPECIAL APP ACCESS - ALL FILES ACCESS.\n\nTHEN RETURN TO INFERNO." :
                             "STARTUP FAILED. ERROR %d\nCHECK /SDCARD/INFERNO STRUCTURE, FREE SPACE AND BUNDLED FILES.\nTHEN CLOSE AND REOPEN INFERNO.", saved);
-#endif
                         ioa_status_screen(app, message, 0);
                         __android_log_print(ANDROID_LOG_ERROR, "Inferno Storage", "%s", message);
                         break;
                     }
-
-
-LOGE("create pre amain");
-					if(ioa_startup_log() != 0)
-                        __android_log_print(ANDROID_LOG_WARN, "Inferno Storage", "Cannot open Inferno startup.log");
+                    if (ioa_startup_log() != 0)
+                        __android_log_print(ANDROID_LOG_WARN, "Inferno Storage", "Cannot open /sdcard/Inferno/startup.log");
                     fprintf(stderr, "Native FB renderer; logical=%dx%d; independent-top/display-owner fix 20261102\n", Xsize, Ysize);
-					amain();
-LOGE("create post amain");
-
-					assetManager = app->activity->assetManager;
-
-				}
-                ANativeWindow_setBuffersGeometry(app->window,
-                              0, 0,
-                              WINDOW_FORMAT_RGBX_8888	//WINDOW_FORMAT_RGB_565	//WINDOW_FORMAT_RGBX_8888	//WINDOW_FORMAT_RGB_565
-                );
-				ANativeActivity* activity = app->activity;
-				goToFullscreenMode(activity);
-
-                engine->PrepareDrawing();
+                    amain();
+                    assetManager = app->activity->assetManager;
+                }
+                if (prepareSurface) {
+                    ANativeWindow_setBuffersGeometry(app->window, 0, 0, WINDOW_FORMAT_RGBX_8888);
+                    goToFullscreenMode(app->activity);
+                    engine->PrepareDrawing();
+                }
                 engine->StartAnimation(true);
                 engine->UpdateDisplay();
-
-//LOGE("create pre amain");
-//				amain();
-//LOGE("create post amain");
             }
             break;
         case APP_CMD_TERM_WINDOW:
@@ -391,7 +368,6 @@ LOGE("create post amain");
             if(xscreendata != NULL)
                 xmouse_btn(0, 0, 0);
             break;
-        case APP_CMD_GAINED_FOCUS:
         case APP_CMD_WINDOW_REDRAW_NEEDED:
         case APP_CMD_WINDOW_RESIZED:
             if(app->window != NULL && xscreendata != NULL){

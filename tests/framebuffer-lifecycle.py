@@ -20,7 +20,7 @@ source = r'''
 enum {APP_CMD_INIT_WINDOW,APP_CMD_TERM_WINDOW,APP_CMD_LOST_FOCUS,APP_CMD_GAINED_FOCUS,
       APP_CMD_WINDOW_REDRAW_NEEDED,APP_CMD_WINDOW_RESIZED,APP_CMD_DESTROY};
 struct Window {int width,height;};
-struct ANativeActivity {void *assetManager;const char *internalDataPath;};
+struct ANativeActivity {void *assetManager;};
 struct android_app {void *userData;Window *window;ANativeActivity *activity;};
 static int Xsize,Ysize,boots,prepares,terminates,updates,releases,storage_calls,errors;
 static unsigned char pixel,*xscreendata;
@@ -40,17 +40,13 @@ static int ANativeWindow_getWidth(Window *w){return w->width;}
 static int ANativeWindow_getHeight(Window *w){return w->height;}
 static int ANativeWindow_setBuffersGeometry(Window *w,int x,int y,int format)
 {if(w==NULL||x!=0||y!=0||format!=2)std::abort();return 0;}
-#if INFERNO_PRIVATE_RUNTIME
-static int ioa_prepare_private_storage(const char *path,void*,void (*)(void),android_app *app)
-{if(path!=app->activity->internalDataPath)std::abort();return ++storage_calls==1?(errno=EACCES,-1):0;}
-#else
 static int ioa_prepare_storage_progress(void*,void (*)(void),android_app*)
 {return ++storage_calls==1?(errno=EACCES,-1):0;}
-#endif
 static void ioa_fb_storage_progress(void){}
 static void ioa_status_screen(android_app*,const char *text,int)
 {
-    if((std::strstr(text,"/SDCARD/INFERNO")!=NULL)==(INFERNO_PRIVATE_RUNTIME!=0))
+    if(std::strstr(text,"/SDCARD/INFERNO")==NULL ||
+       std::strstr(text,"THEN RETURN TO INFERNO")==NULL)
         std::abort();
     errors++;
 }
@@ -67,11 +63,11 @@ source += r'''
 /* Recreate and resume the surface without changing an already allocated logical framebuffer. */
 int main()
 {
-    Window window={320,480};ANativeActivity activity={NULL,"/data/user/0/inferno/files"};
+    Window window={320,480};ANativeActivity activity={NULL};
     android_app app={NULL,&window,&activity};Engine engine(&app);app.userData=&engine;
     ProcessAndroidCmd(&app,APP_CMD_INIT_WINDOW);
     if(boots!=0||errors!=1||engine.active)std::abort();
-    ProcessAndroidCmd(&app,APP_CMD_INIT_WINDOW);
+    ProcessAndroidCmd(&app,APP_CMD_GAINED_FOCUS);
     if(boots!=1||Xsize!=320||Ysize!=480||!engine.active)std::abort();
     ProcessAndroidCmd(&app,APP_CMD_LOST_FOCUS);
     if(engine.active||releases!=1)std::abort();
@@ -86,12 +82,11 @@ int main()
     ProcessAndroidCmd(&app,APP_CMD_WINDOW_RESIZED);
     ProcessAndroidCmd(&app,APP_CMD_WINDOW_REDRAW_NEEDED);
     if(Xsize!=320||Ysize!=480||updates!=5)std::abort();
-    std::puts("PASS actual FB command callback: startup once, focus resume, null-window termination and stable logical dimensions");
+    std::puts("PASS actual FB command callback: retry after shared-storage denial, startup once and stable logical dimensions");
 }
 '''
 with tempfile.TemporaryDirectory(prefix='fb-lifecycle-',dir=ROOT) as directory:
     work=Path(directory);(work/'test.cpp').write_text(source)
-    for private in (0, 1):
-        subprocess.run(['c++','-std=c++11','-fsanitize=undefined','-fno-sanitize-recover=all',
-                        f'-DINFERNO_PRIVATE_RUNTIME={private}',str(work/'test.cpp'),'-o',str(work/'test')],check=True)
-        subprocess.run([str(work/'test')],check=True,timeout=10)
+    subprocess.run(['c++','-std=c++11','-fsanitize=undefined','-fno-sanitize-recover=all',
+                    str(work/'test.cpp'),'-o',str(work/'test')],check=True)
+    subprocess.run([str(work/'test')],check=True,timeout=10)
