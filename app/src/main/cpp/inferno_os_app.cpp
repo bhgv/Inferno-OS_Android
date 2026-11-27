@@ -8,13 +8,13 @@
 #include <cstdlib>
 #include <climits>
 
-#include <android/window.h>
+#include <android/configuration.h>
 #include <android/native_activity.h>
 
 #include <android/native_window.h>
 #include <android_native_app_glue.h>
-#include "inferno_startup_screen.h"
 #include "inferno_fb_pixels.h"
+#include "inferno_startup_screen.h"
 
 #include <android/input.h>
 
@@ -31,9 +31,6 @@
 
 
 const int kFRAME_DISPLAY_TIME = 1;
-
-
-void goToFullscreenMode(ANativeActivity* activity);
 
 
 extern "C" {
@@ -114,7 +111,15 @@ class Engine {
     ~Engine() {}
 
     int PointerMotion(AInputEvent* event) {
-        return ioa_pointer_motion(&pointer_, event, Xsize, Ysize, xmouse_btn);
+        return ioa_pointer_motion(&pointer_, event, &viewport_, xmouse_btn);
+    }
+    void RefreshContent() {
+        content_ = ioa_native_content_rect(app_);
+        frameStartTime_ = {};
+    }
+    ARect ContentBounds() const {
+        return ioa_content_bounds(ANativeWindow_getWidth(app_->window),
+                                  ANativeWindow_getHeight(app_->window), content_);
     }
     void CancelPointer(void) { ioa_pointer_reset(&pointer_, xmouse_btn); }
     void StartAnimation(bool start) { animating_ = start; }
@@ -137,6 +142,8 @@ class Engine {
     struct android_app* app_;
     bool animating_;
     IoaInput pointer_;
+    ARect content_{};
+    IoaViewport viewport_{};
     struct timespec frameStartTime_;
     struct timespec smallFrameStartTime_;
 };
@@ -259,10 +266,13 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
         case APP_CMD_INIT_WINDOW:
         case APP_CMD_GAINED_FOCUS:
             if (app->window != NULL) {
+                engine->RefreshContent();
                 bool prepareSurface = cmd == APP_CMD_INIT_WINDOW || xscreendata == NULL;
                 if (xscreendata == NULL) {
-                    Xsize = ANativeWindow_getWidth(app->window);
-                    Ysize = ANativeWindow_getHeight(app->window);
+                    ARect bounds = engine->ContentBounds();
+                    int density = AConfiguration_getDensity(app->config);
+                    if(!ioa_screen_size(bounds, density, &Xsize, &Ysize))
+                        break;
                     if (ioa_prepare_storage_progress(app->activity->assetManager, ioa_fb_storage_progress, app) != 0) {
                         int saved = errno;
                         char message[768];
@@ -276,13 +286,13 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
                     }
                     if (ioa_startup_log() != 0)
                         __android_log_print(ANDROID_LOG_WARN, "Inferno Storage", "Cannot open /sdcard/Inferno/startup.log");
-                    fprintf(stderr, "Native FB renderer; logical=%dx%d; independent-top/display-owner fix 20261102\n", Xsize, Ysize);
+                    fprintf(stderr, "Native FB content=(%d,%d)-(%d,%d), logical=%dx%d, density=%d\n",
+                        bounds.left, bounds.top, bounds.right, bounds.bottom, Xsize, Ysize, density);
                     amain();
                     assetManager = app->activity->assetManager;
                 }
                 if (prepareSurface) {
                     ANativeWindow_setBuffersGeometry(app->window, 0, 0, WINDOW_FORMAT_RGBX_8888);
-                    goToFullscreenMode(app->activity);
                     engine->PrepareDrawing();
                 }
                 engine->StartAnimation(true);
@@ -299,7 +309,9 @@ ProcessAndroidCmd(struct android_app *app, int32_t cmd)
             break;
         case APP_CMD_WINDOW_REDRAW_NEEDED:
         case APP_CMD_WINDOW_RESIZED:
+        case APP_CMD_CONTENT_RECT_CHANGED:
             if(app->window != NULL && xscreendata != NULL){
+                engine->RefreshContent();
                 engine->StartAnimation(true);
                 engine->UpdateDisplay();
             }
@@ -420,111 +432,19 @@ bool Engine::UpdateDisplay(void) {
 }
 
 
-/*
- * UpdateFrameBuffer():
- *     Internal function to perform bits copying onto current frame buffer
- *     src:
- *        - if nullptr, blank it
- *        - otherwise,  copy to given buf
- *     assumption:
- *         src and bug MUST be in the same geometry format & layout
- */
-/* Copy the original FB coordinate space one-to-one; only buffer bounds clip it. */
+/* Present the same rectangle used to translate input into Inferno coordinates. */
 void Engine::UpdateFrameBuffer(ANativeWindow_Buffer* buf, uint8_t* src)
 {
     if(buf == NULL || buf->bits == NULL || buf->width <= 0 || buf->height <= 0 || buf->stride < buf->width)
         return;
-    ioa_fb_copy(buf->bits, buf->width, buf->height, buf->stride, buf->format,
-                src, Xsize, Ysize);
+    ARect bounds = ioa_content_bounds(buf->width, buf->height, content_);
+    IoaViewport next = ioa_viewport(bounds, Xsize, Ysize);
+    const ARect &old = viewport_.frame, &frame = next.frame;
+    if(old.left != frame.left || old.top != frame.top || old.right != frame.right || old.bottom != frame.bottom)
+        CancelPointer();
+    viewport_ = next;
+    ioa_fb_copy(buf->bits, buf->width, buf->height, buf->stride, buf->format, src, &viewport_);
 }
-
-
-////////////////////////////////////////////////////////////
-#if 0
-int getAndroidApiLevel(ANativeActivity* activity)
-{
-    JNIEnv* lJNIEnv = activity->env;
-
-    jclass versionClass = lJNIEnv->FindClass("android/os/Build$VERSION");
-    if (versionClass == NULL)
-        return 0;
-
-    jfieldID sdkIntFieldID = lJNIEnv->GetStaticFieldID(versionClass, "SDK_INT", "I");
-    if (sdkIntFieldID == NULL)
-        return 0;
-    
-    jint sdkInt = 0;
-    sdkInt = lJNIEnv->GetStaticIntField(versionClass, sdkIntFieldID);
-    
-    return sdkInt;
-}
-#endif
-
-
-////////////////////////////////////////////////////////////
-void goToFullscreenMode(ANativeActivity* activity)
-{
-    // Get the current Android API level.
-//    int apiLevel = 24; //getAndroidApiLevel(activity);
-
-    // Hide the status bar
-    ANativeActivity_setWindowFlags(activity, AWINDOW_FLAG_FULLSCREEN,
-        AWINDOW_FLAG_FULLSCREEN);
-
-#if 0
-    // Hide the navigation bar
-    JavaVM* lJavaVM = activity->vm;
-    JNIEnv* lJNIEnv = activity->env;
-
-    jobject objectActivity = activity->clazz;
-    jclass classActivity = lJNIEnv->GetObjectClass(objectActivity);
-
-    jmethodID methodGetWindow = lJNIEnv->GetMethodID(classActivity, "getWindow", "()Landroid/view/Window;");
-    jobject objectWindow = lJNIEnv->CallObjectMethod(objectActivity, methodGetWindow);
-
-    jclass classWindow = lJNIEnv->FindClass("android/view/Window");
-    jmethodID methodGetDecorView = lJNIEnv->GetMethodID(classWindow, "getDecorView", "()Landroid/view/View;");
-    jobject objectDecorView = lJNIEnv->CallObjectMethod(objectWindow, methodGetDecorView);
-
-    jclass classView = lJNIEnv->FindClass("android/view/View");
-
-    // Default flags
-    jint flags = 0;
-    
-    // API Level 14
-    if (apiLevel >= 14)
-    {
-        jfieldID FieldSYSTEM_UI_FLAG_LOW_PROFILE = lJNIEnv->GetStaticFieldID(classView, "SYSTEM_UI_FLAG_LOW_PROFILE", "I");
-        jint SYSTEM_UI_FLAG_LOW_PROFILE = lJNIEnv->GetStaticIntField(classView, FieldSYSTEM_UI_FLAG_LOW_PROFILE);
-        flags |= SYSTEM_UI_FLAG_LOW_PROFILE;
-    }
-
-    // API Level 16
-    if (apiLevel >= 16)
-    {
-        jfieldID FieldSYSTEM_UI_FLAG_FULLSCREEN = lJNIEnv->GetStaticFieldID(classView, "SYSTEM_UI_FLAG_FULLSCREEN", "I");
-        jint SYSTEM_UI_FLAG_FULLSCREEN = lJNIEnv->GetStaticIntField(classView, FieldSYSTEM_UI_FLAG_FULLSCREEN);
-        flags |= SYSTEM_UI_FLAG_FULLSCREEN;
-    }
-
-    // API Level 19
-    if (apiLevel >= 19)
-    {
-        jfieldID FieldSYSTEM_UI_FLAG_IMMERSIVE_STICKY  = lJNIEnv->GetStaticFieldID(classView, "SYSTEM_UI_FLAG_IMMERSIVE_STICKY", "I");
-        jint SYSTEM_UI_FLAG_IMMERSIVE_STICKY = lJNIEnv->GetStaticIntField(classView, FieldSYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        flags |= SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-    }
-
-    jmethodID methodsetSystemUiVisibility = lJNIEnv->GetMethodID(classView, "setSystemUiVisibility", "(I)V");
-    lJNIEnv->CallVoidMethod(objectDecorView, methodsetSystemUiVisibility, flags);
-#endif
-}
-
-////////////////////////////////////////////////////////////
-
-
-
-
 
 
 #if 0
@@ -543,7 +463,6 @@ static void onResume(ANativeActivity* activity)
 //    sf::Lock lock(states->mutex);
 
 //    if (states->fullscreen)
-        goToFullscreenMode(activity);
 
     // Send an event to warn people the activity has been resumed
 //    sf::Event event;

@@ -3,6 +3,7 @@
 
 #include <android/input.h>
 #include <stdint.h>
+#include "inferno_viewport.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,7 +21,7 @@ typedef struct {
 	int64_t down_time, tap_time;
 } IoaTouch;
 
-int ioa_touch_motion(IoaTouch*, const AInputEvent*, int width, int height, IoaPointer*);
+int ioa_touch_motion(IoaTouch*, const AInputEvent*, const IoaViewport*, IoaPointer*);
 void ioa_touch_reset(IoaTouch*, IoaPointer*);
 
 typedef struct {
@@ -29,7 +30,7 @@ typedef struct {
 	float wheel;
 } IoaInput;
 
-int ioa_pointer_motion(IoaInput*, const AInputEvent*, int width, int height, IoaPointer*);
+int ioa_pointer_motion(IoaInput*, const AInputEvent*, const IoaViewport*, IoaPointer*);
 void ioa_pointer_reset(IoaInput*, IoaPointer*);
 
 #ifdef __cplusplus

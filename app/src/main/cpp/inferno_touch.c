@@ -7,20 +7,22 @@ enum { TapDistance = 12, TapTime = 300000000 }; /* Pixels and nanoseconds. */
 enum { MaxWheelSteps = 4 };
 
 static int
-coordinate(float value, int span)
+coordinate(float value, int origin, int span, int logical)
 {
-	if(!(value > 0))
+	double offset = (double)value - origin;
+	if(!(offset > 0))
 		return 0;
-	if(value >= span - 1)
-		return span - 1;
-	return (int)value;
+	if(offset >= span)
+		return logical - 1;
+	return (int)(offset * logical / span);
 }
 
 static void
-position(IoaTouch *touch, const AInputEvent *event, size_t index, int width, int height)
+position(IoaTouch *touch, const AInputEvent *event, size_t index, const IoaViewport *view)
 {
-	touch->x = coordinate(AMotionEvent_getX(event, index), width);
-	touch->y = coordinate(AMotionEvent_getY(event, index), height);
+	ARect r = view->frame;
+	touch->x = coordinate(AMotionEvent_getX(event, index), r.left, r.right - r.left, view->width);
+	touch->y = coordinate(AMotionEvent_getY(event, index), r.top, r.bottom - r.top, view->height);
 }
 
 static int
@@ -69,7 +71,7 @@ ioa_touch_reset(IoaTouch *touch, IoaPointer *send)
 }
 
 int
-ioa_touch_motion(IoaTouch *touch, const AInputEvent *event, int width, int height,
+ioa_touch_motion(IoaTouch *touch, const AInputEvent *event, const IoaViewport *view,
                  IoaPointer *send)
 {
 	int action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
@@ -80,15 +82,17 @@ ioa_touch_motion(IoaTouch *touch, const AInputEvent *event, int width, int heigh
 		ioa_touch_reset(touch, send);
 		return 1;
 	}
-	if(width <= 0 || height <= 0)
+	if(view->frame.right <= view->frame.left || view->frame.bottom <= view->frame.top)
 		return 0;
 	if(action == AMOTION_EVENT_ACTION_DOWN){
 		if(touch->buttons || count != 1)
 			ioa_touch_reset(touch, send);
-		if(count != 1)
+		if(count != 1 || !ioa_viewport_contains(view, AMotionEvent_getX(event, 0), AMotionEvent_getY(event, 0))){
+			touch->tap_time = 0;
 			return 1;
+		}
 		touch->primary = AMotionEvent_getPointerId(event, 0);
-		position(touch, event, 0, width, height);
+		position(touch, event, 0, view);
 		touch->buttons = Left;
 		send(touch->x, touch->y, Left | begin_click(touch, time));
 		return 1;
@@ -113,7 +117,7 @@ ioa_touch_motion(IoaTouch *touch, const AInputEvent *event, int width, int heigh
 		ioa_touch_reset(touch, send);
 		return 1;
 	}
-	position(touch, event, index, width, height);
+	position(touch, event, index, view);
 	touch->tap_candidate &= near(touch->x, touch->y, touch->downx, touch->downy);
 
 	switch(action){
@@ -175,7 +179,7 @@ mouse_wheel(IoaInput *input, float delta, IoaPointer *send)
 }
 
 static int
-mouse_motion(IoaInput *input, const AInputEvent *event, int width, int height,
+mouse_motion(IoaInput *input, const AInputEvent *event, const IoaViewport *view,
              IoaPointer *send)
 {
 	IoaTouch *mouse = &input->mouse;
@@ -198,7 +202,7 @@ mouse_motion(IoaInput *input, const AInputEvent *event, int width, int height,
 	default:
 		return 0;
 	}
-	if(width <= 0 || height <= 0 || AMotionEvent_getPointerCount(event) == 0)
+	if(view->frame.right <= view->frame.left || view->frame.bottom <= view->frame.top || AMotionEvent_getPointerCount(event) == 0)
 		return 0;
 
 	int oldx = mouse->x, oldy = mouse->y;
@@ -208,8 +212,12 @@ mouse_motion(IoaInput *input, const AInputEvent *event, int width, int height,
 	if(buttons && !oldbuttons && action != AMOTION_EVENT_ACTION_DOWN &&
 	   action != AMOTION_EVENT_ACTION_BUTTON_PRESS)
 		return 1;
+	if(!oldbuttons && !ioa_viewport_contains(view, AMotionEvent_getX(event, 0), AMotionEvent_getY(event, 0))){
+		mouse->tap_time = 0;
+		return 1;
+	}
 	int64_t time = AMotionEvent_getEventTime(event);
-	position(mouse, event, 0, width, height);
+	position(mouse, event, 0, view);
 	mouse->tap_candidate &= near(mouse->x, mouse->y, mouse->downx, mouse->downy);
 	int click = 0;
 	if((oldbuttons | buttons) & (Middle | Right)){
@@ -228,18 +236,18 @@ mouse_motion(IoaInput *input, const AInputEvent *event, int width, int height,
 }
 
 int
-ioa_pointer_motion(IoaInput *input, const AInputEvent *event, int width, int height,
+ioa_pointer_motion(IoaInput *input, const AInputEvent *event, const IoaViewport *view,
                    IoaPointer *send)
 {
 	/* An active button grab owns the Inferno pointer until release. */
 	if((AInputEvent_getSource(event) & AINPUT_SOURCE_MOUSE) == AINPUT_SOURCE_MOUSE){
 		if(input->touch.buttons)
 			return 1;
-		return mouse_motion(input, event, width, height, send);
+		return mouse_motion(input, event, view, send);
 	}
 	if(input->mouse.buttons)
 		return 1;
-	return ioa_touch_motion(&input->touch, event, width, height, send);
+	return ioa_touch_motion(&input->touch, event, view, send);
 }
 
 void

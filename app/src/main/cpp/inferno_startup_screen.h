@@ -1,5 +1,6 @@
 #ifndef IOA_STARTUP_SCREEN_H
 #define IOA_STARTUP_SCREEN_H // Asset-independent native startup diagnostics.
+#include "inferno_viewport.h"
 #include <stdint.h>
 #include <errno.h>
 
@@ -136,6 +137,16 @@ static const unsigned char ioa_status_font[128][7] = {
 };
 
 
+static inline ARect
+ioa_native_content_rect(struct android_app *app)
+{
+    pthread_mutex_lock(&app->mutex);
+    ARect rect = app->contentRect;
+    pthread_mutex_unlock(&app->mutex);
+    return rect;
+}
+
+
 /* Paint directly into the native window; no VM framebuffer or installed font is needed. */
 static void
 ioa_status_screen(struct android_app *app, const char *text, unsigned int percent)
@@ -149,16 +160,17 @@ ioa_status_screen(struct android_app *app, const char *text, unsigned int percen
     ANativeWindow_setBuffersGeometry(app->window, 0, 0, WINDOW_FORMAT_RGBX_8888);
     if(ANativeWindow_lock(app->window, &buffer, NULL) != 0)
         return;
-    scale = buffer.width >= 600 ? 3 : 2;
+    ARect bounds = ioa_content_bounds(buffer.width, buffer.height, ioa_native_content_rect(app));
+    scale = bounds.right - bounds.left >= 600 ? 3 : 2;
     for(y = 0; y < buffer.height; y++)
         for(x = 0; x < buffer.width; x++)
             static_cast<uint32_t*>(buffer.bits)[y*buffer.stride+x] = 0xff202020;
-    x = 12; y = app->contentRect.top + 24;
+    x = bounds.left + 12; y = bounds.top + 24;
     for(; *cursor != 0; cursor++){
         unsigned char c = *cursor;
         if(c >= 'a' && c <= 'z') c -= 'a'-'A';
-        if(c == '\n' || x+6*scale >= buffer.width){
-            x = 12; y += 10*scale;
+        if(c == '\n' || x+6*scale >= bounds.right){
+            x = bounds.left + 12; y += 10*scale;
             if(c == '\n') continue;
         }
         if(c >= 128) c = ' ';
@@ -168,14 +180,15 @@ ioa_status_screen(struct android_app *app, const char *text, unsigned int percen
                     for(dy = 0; dy < scale; dy++)
                         for(dx = 0; dx < scale; dx++){
                             int px = x+col*scale+dx, py = y+row*scale+dy;
-                            if(px >= 0 && px < buffer.width && py >= 0 && py < buffer.height)
+                            if(px >= bounds.left && px < bounds.right && py >= bounds.top && py < bounds.bottom)
                                 static_cast<uint32_t*>(buffer.bits)[py*buffer.stride+px] = 0xffffffff;
                         }
         x += 6*scale;
     }
-    for(y = buffer.height-32; y < buffer.height-16; y++)
-        for(x = 12; x < 12+(buffer.width-24)*static_cast<int>(percent > 100 ? 100 : percent)/100; x++)
-            if(y >= 0)
+    int bar = (bounds.right - bounds.left - 24) * static_cast<int>(percent > 100 ? 100 : percent) / 100;
+    for(y = bounds.bottom-32; y < bounds.bottom-16; y++)
+        for(x = bounds.left + 12; x < bounds.left + 12 + bar; x++)
+            if(y >= bounds.top)
                 static_cast<uint32_t*>(buffer.bits)[y*buffer.stride+x] = 0xfff0b450;
     ANativeWindow_unlockAndPost(app->window);
 }
