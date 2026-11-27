@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the production FB copier with unequal extents, padded stride and guarded allocations."""
+"""Run the native framebuffer scaler with insets, a padded stride and guarded allocations."""
 from pathlib import Path
 import subprocess
 import tempfile
@@ -14,7 +14,7 @@ SOURCE=r'''
 #include "inferno_fb_pixels.h"
 
 
-/* Verify identity placement and complete source/destination guards for every tested layout. */
+/* Verify scaled placement and complete source/destination guards. */
 int main()
 {
     int cases=0;
@@ -29,24 +29,35 @@ int main()
             p[0]=x+3;p[1]=y+7;p[2]=x+y+81;p[3]=255;
         }
         auto saved=src;
-        ioa_fb_copy(dst.data()+16,w,h,stride,format,src.data()+16,sw,sh);
+        ARect bounds = ioa_content_bounds(w, h, {w > 2 ? 1 : 0, 0, w, h > 2 ? h - 1 : h});
+        IoaViewport view = ioa_viewport(bounds, sw, sh);
+        ARect frame = view.frame;
+        ioa_fb_copy(dst.data()+16,w,h,stride,format,src.data()+16,&view);
         if(src!=saved)return 1;
         for(int i=0;i<16;i++)if(dst[i]!=0xa5||dst[dst.size()-1-i]!=0xa5)return 2;
         for(int y=0;y<h;y++)for(int x=0;x<stride;x++){
             unsigned char *p=dst.data()+16+((size_t)y*stride+x)*bpp;
             if(x>=w){for(int j=0;j<bpp;j++)if(p[j]!=0xa5)return 3;continue;}
             int r=0,g=0,b=0;
-            if(x<sw&&y<sh){r=x+y+81;g=y+7;b=x+3;}
+            if(x>=frame.left && x<frame.right && y>=frame.top && y<frame.bottom){
+                int sx=(x-frame.left)*sw/(frame.right-frame.left);
+                int sy=(y-frame.top)*sh/(frame.bottom-frame.top);
+                r=sx+sy+81;g=sy+7;b=sx+3;
+            }
             if(bpp==4){if(p[0]!=r||p[1]!=g||p[2]!=b||p[3]!=255)return 4;}
             else if((p[0]|p[1]<<8)!=((r>>3)<<11|(g>>2)<<5|b>>3))return 5;
         }
-        ioa_fb_copy(dst.data()+16,w,h,stride,format,NULL,sw,sh);
+        ioa_fb_copy(dst.data()+16,w,h,stride,format,NULL,&view);
         cases++;
     }
-    printf("PASS original FB identity coordinates: %d clipped/padded RGB layouts, complete guards\n",cases);
+    printf("PASS scaled framebuffer: %d inset and padded RGB layouts with guard checks\n",cases);
 }
 '''
 with tempfile.TemporaryDirectory(prefix='fb-pixels-',dir=ROOT) as directory:
     p=Path(directory);(p/'test.cpp').write_text(SOURCE)
-    subprocess.run(['c++','-std=c++11','-O2','-Wall','-Wextra','-Werror','-fsanitize=undefined','-fno-sanitize-recover=all','-I'+str(ROOT/'app/src/main/cpp'),str(p/'test.cpp'),'-o',str(p/'test')],check=True)
+    (p/'android').mkdir()
+    (p/'android/rect.h').write_text('#include <stdint.h>\ntypedef struct { int32_t left, top, right, bottom; } ARect;\n')
+    (p/'android/configuration.h').write_text(
+        'enum { ACONFIGURATION_DENSITY_MEDIUM = 160, ACONFIGURATION_DENSITY_ANY = 0xfffe };\n')
+    subprocess.run(['c++','-std=c++11','-O2','-Wall','-Wextra','-Werror','-fsanitize=undefined','-fno-sanitize-recover=all','-I'+str(p),'-I'+str(ROOT/'app/src/main/cpp'),str(p/'test.cpp'),'-o',str(p/'test')],check=True)
     subprocess.run([str(p/'test')],check=True)
