@@ -1,5 +1,37 @@
 # Inferno-OS_Android
 
+## Build ARM32 and ARM64 from master
+
+On an x86-64 Linux build host, install Android NDK r27c, Python 3, a host C
+compiler, CMake and Ninja. Clone the two projects beside each other:
+
+```sh
+git clone --branch master https://github.com/bhgv/Inferno-OS-bhgv.git
+git clone --branch master https://github.com/bhgv/Inferno-OS_Android.git
+workspace="$(pwd)"
+(cd Inferno-OS-bhgv && CFLAGS='-O0 -g -fno-strict-aliasing' MKBOOTSTRAP_LIMBO=1 \
+    MKBOOTSTRAP_BINDIR="$workspace/host-tools" sh makemk.sh)
+
+for abi in armeabi-v7a arm64-v8a; do
+    Inferno-OS_Android/tools/build-android-awm.sh "$abi" "$workspace/Inferno-OS-bhgv" \
+        "$ANDROID_NDK_HOME" "$workspace/host-tools" "$workspace/build-$abi" \
+        --apk-sdk "$ANDROID_SDK_ROOT" --apk-sign-tools "$APK_SIGN_TOOLS"
+done
+```
+
+For signed APKs, set `ANDROID_SDK_ROOT` to an SDK with platform 35 and build-tools
+35.0.0, and `APK_SIGN_TOOLS` to the directory containing the Go executables
+`apksign` and `apksigverify` from [apksig-go](https://github.com/agusibrahim/apksig-go/tree/a0389a9d7f83032504713ac6052f85edfb52f64b).
+The build uses OpenSSL and does not invoke Java or Gradle. Omit both signing
+options to produce just the shared library. Add `--awm-runner qemu-arm` for
+`armeabi-v7a` or `--awm-runner qemu-aarch64` for `arm64-v8a` to exercise AWM
+against the native framebuffer fixture.
+
+The ARMv7 build uses classic Dis. The ARM64 build uses the checked native64 AWM
+profile. The APKs target Android 5.0 (API 21) or later and use `/sdcard/Inferno`.
+Bundled provisioning fills in missing files and preserves existing files.
+Grant the test app storage access on the device before launching AWM.
+
 ## Changes
 * `inferno-os` tree was replaced with the repo `Inferno-OS-bhgv`. use:
 ```
@@ -96,7 +128,7 @@ It is built under Windows. But if you are using Linux it is easy to build it und
 * Cmake plugin for Android Studio
 * NDK 
 
-# how to build
+# Historical Windows/Android Studio build
 
 ## Windows host
 ```
