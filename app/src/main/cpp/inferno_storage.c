@@ -31,6 +31,9 @@ static const char *runtimefiles[] = { // Minimum phone desktop entry points, not
 	"dis/wm/awmpanel-keyboard.dis",
 	"dis/wm/awmcalc.dis",
 	"dis/wm/awmfiles.dis",
+	"dis/wm/help.dis",
+	"man/1/INDEX",
+	"man/2/INDEX",
 #endif
 };
 
