@@ -29,6 +29,8 @@ static const char *runtimefiles[] = { // Minimum phone desktop entry points, not
 	"fonts/ttf/FantasqueSansMono-Regular.ttf", // Default bundled command-line font.
 #if INFERNO_AWM_RUNTIME
 	"dis/wm/awmpanel-keyboard.dis",
+	"dis/wm/awmpanel-history.dis",
+	"dis/wm/awmsh-history.dis",
 	"dis/wm/awmcalc.dis",
 	"dis/wm/awmfiles.dis",
 	"dis/wm/help.dis",
